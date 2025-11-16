@@ -269,11 +269,48 @@
         </div>
       </div>
     </div>
+    
+    <!-- 随机组卷设置模态框 -->
+    <div v-if="showRandomSettingsModal" class="modal-overlay" @click="closeRandomSettingsModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>出题范围</h3>
+          <button class="close-btn" @click="closeRandomSettingsModal">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label>试卷类型</label>
+            <select v-model="randomSettings.paperType" class="form-select">
+              <option value="type1">类型1</option>
+              <option value="type2">类型2</option>
+              <option value="type3">类型3</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>题目数量</label>
+            <input 
+              type="number" 
+              v-model="randomSettings.questionCount" 
+              class="form-input"
+              min="1"
+              max="100"
+            >
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn secondary" @click="closeRandomSettingsModal">返回</button>
+          <button class="btn primary" @click="saveRandomSettings">保存</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -463,6 +500,39 @@ const removeQuestion = (index) => {
 const exitCreate = () => {
   router.push('/home/question/paper')
 }
+
+// 显示随机组卷设置模态框
+const showRandomSettingsModal = ref(false)
+
+// 随机组卷设置
+const randomSettings = ref({
+  paperType: 'type1',
+  questionCount: 10
+})
+
+// 监听组卷方式变化
+watch(() => paperInfo.value.method, (newMethod) => {
+  if (newMethod === '随机组卷') {
+    showRandomSettingsModal.value = true
+  }
+})
+
+// 关闭随机组卷设置模态框
+const closeRandomSettingsModal = () => {
+  showRandomSettingsModal.value = false
+  // 如果关闭时还是随机组卷，重置为选题组卷
+  if (paperInfo.value.method === '随机组卷') {
+    paperInfo.value.method = '选题组卷'
+  }
+}
+
+// 保存随机组卷设置
+const saveRandomSettings = () => {
+  console.log('随机组卷设置:', randomSettings.value)
+  showRandomSettingsModal.value = false
+  // 这里可以添加实际的随机组卷逻辑
+}
+
 </script>
 
 <style scoped>
@@ -813,6 +883,10 @@ const exitCreate = () => {
   display: flex;
   flex-direction: column;
   width: 90%;
+  max-width: 500px;
+}
+
+.modal-content.large {
   max-width: 1200px;
 }
 

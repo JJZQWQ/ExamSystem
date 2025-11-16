@@ -136,20 +136,17 @@
 
         <!-- 用户管理页面 -->
         <div v-else-if="activePrimary === 'user'" class="page-content">
-          <h1>用户管理</h1>
-          <div v-if="activeSecondary === 'studentManage'">
-            <h2>学生管理</h2>
-            <p>这里是学生管理页面的内容...</p>
-          </div>
+          <router-view />
         </div>
 
         <!-- 系统管理页面 -->
         <div v-else-if="activePrimary === 'system'" class="page-content">
-          <h1>系统管理</h1>
-          <div v-if="activeSecondary === 'roleManage'">
-            <h2>角色管理</h2>
-            <p>这里是角色管理页面的内容...</p>
-          </div>
+          <router-view />
+        </div>
+
+        <!-- 考试页面 -->
+        <div v-else-if="activePrimary === 'examination'" class="page-content">
+          <router-view />
         </div>
       </div>
 
@@ -176,7 +173,8 @@ const navItems = [
   { id: 'exam', name: '考试管理' },
   { id: 'question', name: '试题管理' },
   { id: 'user', name: '用户管理' },
-  { id: 'system', name: '系统管理' }
+  { id: 'system', name: '系统管理' },
+  { id: 'examination', name: '考试' }  // 新增考试导航项
 ]
 
 // 二级导航项（更新试题管理的二级导航，移除创建试卷）
@@ -202,6 +200,10 @@ const subNavItems = {
   ],
   system: [
     { id: 'roleManage', name: '角色管理' }
+  ],
+  examination: [  // 新增考试导航的二级导航
+    { id: 'currentExam', name: '当前考试' },
+    { id: 'historyExam', name: '历史考试' }
   ]
 }
 
@@ -248,6 +250,20 @@ const setSecondaryNav = (id) => {
       router.push('/home/question/bank')
     } else if (id === 'paperBank') {
       router.push('/home/question/paper')
+    }
+  } else if (activePrimary.value === 'user') {
+    if (id === 'studentManage') {
+      router.push('/home/user/student')
+    }
+  } else if (activePrimary.value === 'system') {
+    if (id === 'roleManage') {
+      router.push('/home/system/role')
+    }
+  } else if (activePrimary.value === 'examination') {
+    if (id === 'currentExam') {
+      router.push('/home/examination/current')
+    } else if (id === 'historyExam') {
+      router.push('/home/examination/history')
     }
   }
 }
