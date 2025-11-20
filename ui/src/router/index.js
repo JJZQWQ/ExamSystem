@@ -28,10 +28,6 @@ const routes = [
     component: HomePage,
     children: [
       {
-        path: '',
-        redirect: 'question/paper'
-      },
-      {
         path: 'exam',
         children: [
           {
