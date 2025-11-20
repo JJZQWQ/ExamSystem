@@ -269,11 +269,48 @@
         </div>
       </div>
     </div>
+    
+    <!-- 随机组卷设置模态框 -->
+    <div v-if="showRandomSettingsModal" class="modal-overlay" @click="closeRandomSettingsModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>出题范围</h3>
+          <button class="close-btn" @click="closeRandomSettingsModal">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label>试卷类型</label>
+            <select v-model="randomSettings.paperType" class="form-select">
+              <option value="type1">类型1</option>
+              <option value="type2">类型2</option>
+              <option value="type3">类型3</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>题目数量</label>
+            <input 
+              type="number" 
+              v-model="randomSettings.questionCount" 
+              class="form-input"
+              min="1"
+              max="100"
+            >
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn secondary" @click="closeRandomSettingsModal">返回</button>
+          <button class="btn primary" @click="saveRandomSettings">保存</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -463,6 +500,39 @@ const removeQuestion = (index) => {
 const exitCreate = () => {
   router.push('/home/question/paper')
 }
+
+// 显示随机组卷设置模态框
+const showRandomSettingsModal = ref(false)
+
+// 随机组卷设置
+const randomSettings = ref({
+  paperType: 'type1',
+  questionCount: 10
+})
+
+// 监听组卷方式变化
+watch(() => paperInfo.value.method, (newMethod) => {
+  if (newMethod === '随机组卷') {
+    showRandomSettingsModal.value = true
+  }
+})
+
+// 关闭随机组卷设置模态框
+const closeRandomSettingsModal = () => {
+  showRandomSettingsModal.value = false
+  // 如果关闭时还是随机组卷，重置为选题组卷
+  if (paperInfo.value.method === '随机组卷') {
+    paperInfo.value.method = '选题组卷'
+  }
+}
+
+// 保存随机组卷设置
+const saveRandomSettings = () => {
+  console.log('随机组卷设置:', randomSettings.value)
+  showRandomSettingsModal.value = false
+  // 这里可以添加实际的随机组卷逻辑
+}
+
 </script>
 
 <style scoped>
@@ -689,6 +759,7 @@ const exitCreate = () => {
   padding: 10px 0;
 }
 
+/* 题型选择按钮 */
 .question-type-btn {
   padding: 15px;
   border: 1px solid #ddd;
@@ -698,14 +769,48 @@ const exitCreate = () => {
   font-size: 14px;
   font-weight: bold;
   color: #333;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
+  position: relative;
+  overflow: hidden;
 }
 
-.question-type-btn:hover, .question-type-btn.active {
+.question-type-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(0, 102, 204, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s, height 0.5s;
+}
+
+.question-type-btn:active::before {
+  width: 100px;
+  height: 100px;
+}
+
+.question-type-btn:hover {
+  background-color: #f0f8ff;
+  border-color: #0066cc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+}
+
+.question-type-btn.active {
   background-color: #0066cc;
   color: white;
   border-color: #0066cc;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.question-type-btn.active:hover {
+  background-color: #0052a3;
+  transform: scale(1.05) translateY(-2px);
 }
 
 /* 右侧区域 */
@@ -759,9 +864,40 @@ const exitCreate = () => {
 
 .question-item {
   margin-bottom: 20px;
-  padding: 15px;
+  padding: 20px;
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.question-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.05), transparent);
+  transition: left 0.6s;
+}
+
+.question-item:hover::before {
+  left: 100%;
+}
+
+.question-item:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: #0066cc;
+  background-color: #fff;
+}
+
+.question-item:active {
+  transform: translateY(-2px) scale(1.005);
+  transition: all 0.1s;
 }
 
 .question-stem {
@@ -779,15 +915,54 @@ const exitCreate = () => {
   align-items: center;
   margin-bottom: 8px;
   gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.option-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.05), transparent);
+  transition: left 0.6s;
+}
+
+.option-item:hover::before {
+  left: 100%;
+}
+
+.option-item:hover {
+  background-color: #f0f8ff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
 }
 
 .option-item input[type="radio"] {
   margin: 0;
+  transition: all 0.2s ease;
+}
+
+.option-item:hover input[type="radio"] {
+  transform: scale(1.2);
 }
 
 .option-item label {
   cursor: pointer;
   color: #555;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.option-item:hover label {
+  color: #0066cc;
+  transform: translateX(2px);
 }
 
 /* 模态框样式 */
@@ -802,17 +977,42 @@ const exitCreate = () => {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
 }
 
 .modal-content {
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   width: 90%;
+  max-width: 500px;
+  animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0066cc, #00a8ff, #0066cc);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.modal-content.large {
   max-width: 1200px;
 }
 
@@ -835,6 +1035,43 @@ const exitCreate = () => {
   font-size: 24px;
   cursor: pointer;
   color: #999;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.close-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.close-btn:hover::before {
+  width: 40px;
+  height: 40px;
+}
+
+.close-btn:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.close-btn:active {
+  transform: rotate(90deg) scale(0.95);
 }
 
 .modal-body {
@@ -846,9 +1083,35 @@ const exitCreate = () => {
 /* 筛选区域 */
 .filter-section {
   background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
+  border-radius: 12px;
+  padding: 20px;
   margin-bottom: 20px;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.filter-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.03), transparent);
+  transition: left 0.8s;
+}
+
+.filter-section:hover::before {
+  left: 100%;
+}
+
+.filter-section:hover {
+  border-color: #e1e8ff;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.08);
+  transform: translateY(-2px);
 }
 
 .filter-row {
@@ -862,11 +1125,21 @@ const exitCreate = () => {
   flex-direction: column;
   gap: 5px;
   min-width: 150px;
+  transition: all 0.2s ease;
+}
+
+.filter-group:hover {
+  transform: scale(1.02);
 }
 
 .filter-group label {
   font-weight: bold;
   color: #333;
+  transition: color 0.2s ease;
+}
+
+.filter-group:hover label {
+  color: #0066cc;
 }
 
 .date-range {
@@ -891,6 +1164,7 @@ const exitCreate = () => {
   width: 100%;
   border-collapse: collapse;
   min-width: 600px;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .data-table th,
@@ -898,12 +1172,42 @@ const exitCreate = () => {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid #eee;
+  transition: all 0.2s ease;
+}
+
+.data-table tbody tr {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.data-table tbody tr::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background-color: transparent;
+  transition: background-color 0.3s;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8f9ff;
+  transform: translateX(3px);
+}
+
+.data-table tbody tr:hover::before {
+  background-color: #0066cc;
 }
 
 .data-table th {
   background-color: #f8f9fa;
   font-weight: bold;
   color: #333;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 /* 分页控件 */
@@ -913,14 +1217,62 @@ const exitCreate = () => {
   gap: 10px;
   margin-top: 20px;
   flex-wrap: wrap;
+  animation: fadeInUp 0.8s ease-out;
 }
 
 .page-btn {
-  padding: 5px 10px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   background-color: white;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.page-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(0, 102, 204, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.page-btn:hover::before {
+  width: 30px;
+  height: 30px;
+}
+
+.page-btn:hover {
+  border-color: #0066cc;
+  background-color: #0066cc;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+}
+
+.page-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.page-btn.active {
+  background-color: #0066cc;
+  color: white;
+  border-color: #0066cc;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+.page-btn.active:hover {
+  background-color: #0052a3;
+  transform: scale(1.1) translateY(-2px);
 }
 
 .page-btn.active {
