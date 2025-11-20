@@ -11,6 +11,10 @@ import QuestionBank from '../components/QuestionBank.vue'
 import PaperBank from '../components/PaperBank.vue'
 import PaperPreview from '../components/PaperPreview.vue'
 import CreatePaperPage from '../components/CreatePaperPage.vue'
+import StudentManagement from '../components/StudentManagement.vue'
+import RoleManagement from '../components/RoleManagement.vue'
+import CurrentExam from '../components/CurrentExam.vue'
+import HistoryExam from '../components/HistoryExam.vue'
 
 const routes = [
   {
@@ -26,6 +30,10 @@ const routes = [
       {
         path: 'exam',
         children: [
+          {
+            path: '',
+            redirect: 'info'
+          },
           {
             path: 'info',
             name: 'ExamInfoManagement',
@@ -57,6 +65,10 @@ const routes = [
         path: 'question',
         children: [
           {
+            path: '',
+            redirect: 'paper'
+          },
+          {
             path: 'category',
             name: 'QuestionCategoryManagement',
             component: QuestionCategoryManagement
@@ -70,6 +82,53 @@ const routes = [
             path: 'paper',
             name: 'PaperBank',
             component: PaperBank
+          }
+        ]
+      },
+      {
+        path: 'user',
+        children: [
+          {
+            path: '',
+            redirect: 'student'
+          },
+          {
+            path: 'student',
+            name: 'StudentManagement',
+            component: StudentManagement
+          }
+        ]
+      },
+      {
+        path: 'system',
+        children: [
+          {
+            path: '',
+            redirect: 'role'
+          },
+          {
+            path: 'role',
+            name: 'RoleManagement',
+            component: RoleManagement
+          }
+        ]
+      },
+      {
+        path: 'examination',
+        children: [
+          {
+            path: '',
+            redirect: 'current'
+          },
+          {
+            path: 'current',
+            name: 'CurrentExam',
+            component: CurrentExam
+          },
+          {
+            path: 'history',
+            name: 'HistoryExam',
+            component: HistoryExam
           }
         ]
       }
