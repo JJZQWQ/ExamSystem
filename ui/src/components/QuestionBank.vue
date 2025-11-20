@@ -195,110 +195,108 @@
             </select>
           </div>
           
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="难度" prop="difficulty">
+                <el-rate v-model="questionForm.difficulty" show-text />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="分值" prop="score">
+                <el-input-number v-model="questionForm.score" :min="1" :max="100" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
           <!-- 选项部分（仅对选择题显示） -->
-          <div v-if="questionForm.type === '单选题' || questionForm.type === '多选题'" class="form-group">
-            <label>选项</label>
-            <div class="options-container">
-              <div 
-                v-for="(option, index) in questionForm.options" 
-                :key="index"
-                class="option-item"
-              >
-                <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
-                <input 
-                  type="text" 
-                  v-model="option.content" 
-                  class="form-input option-input"
-                  placeholder="请输入选项内容"
+          <div v-if="questionForm.type === '单选题' || questionForm.type === '多选题'">
+            <el-form-item label="选项" prop="options">
+              <div class="options-container">
+                <div 
+                  v-for="(option, index) in questionForm.options" 
+                  :key="index"
+                  class="option-item"
                 >
-                <button 
-                  v-if="questionForm.options.length > 2" 
-                  class="btn small danger"
-                  @click="removeOption(index)"
-                >
-                  删除
-                </button>
+                  <el-input
+                    v-model="option.content"
+                    :placeholder="'选项 ' + String.fromCharCode(65 + index)"
+                    class="option-input"
+                  >
+                    <template #prefix>
+                      <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
+                    </template>
+                    <template #append>
+                      <el-button 
+                        v-if="questionForm.options.length > 2" 
+                        type="danger"
+                        @click="removeOption(index)"
+                        :icon="Delete"
+                      />
+                    </template>
+                  </el-input>
+                </div>
+                <el-button type="primary" plain @click="addOption" :icon="Plus">
+                  添加选项
+                </el-button>
               </div>
-              <button class="btn small secondary" @click="addOption">添加选项</button>
-            </div>
+            </el-form-item>
           </div>
           
           <!-- 答案部分 -->
-          <div class="form-group">
-            <label>答案 *</label>
+          <el-form-item label="答案" prop="answer">
             <!-- 单选题答案 -->
-            <div v-if="questionForm.type === '单选题'" class="answer-section">
-              <div class="radio-group">
-                <div 
+            <div v-if="questionForm.type === '单选题'">
+              <el-radio-group v-model="questionForm.answer">
+                <el-radio 
                   v-for="(option, index) in questionForm.options" 
                   :key="index"
-                  class="radio-item"
+                  :label="String.fromCharCode(65 + index)"
                 >
-                  <input 
-                    type="radio" 
-                    :id="'option' + index"
-                    :value="String.fromCharCode(65 + index)"
-                    v-model="questionForm.answer"
-                  >
-                  <label :for="'option' + index">{{ String.fromCharCode(65 + index) }}. {{ option.content }}</label>
-                </div>
-              </div>
+                  {{ String.fromCharCode(65 + index) }}. {{ option.content }}
+                </el-radio>
+              </el-radio-group>
             </div>
             
             <!-- 多选题答案 -->
-            <div v-else-if="questionForm.type === '多选题'" class="answer-section">
-              <div class="checkbox-group">
-                <div 
+            <div v-else-if="questionForm.type === '多选题'">
+              <el-checkbox-group v-model="questionForm.answer">
+                <el-checkbox 
                   v-for="(option, index) in questionForm.options" 
                   :key="index"
-                  class="checkbox-item"
+                  :label="String.fromCharCode(65 + index)"
                 >
-                  <input 
-                    type="checkbox" 
-                    :id="'option' + index"
-                    :value="String.fromCharCode(65 + index)"
-                    v-model="questionForm.answer"
-                  >
-                  <label :for="'option' + index">{{ String.fromCharCode(65 + index) }}. {{ option.content }}</label>
-                </div>
-              </div>
+                  {{ String.fromCharCode(65 + index) }}. {{ option.content }}
+                </el-checkbox>
+              </el-checkbox-group>
             </div>
             
             <!-- 判断题答案 -->
-            <div v-else-if="questionForm.type === '判断题'" class="answer-section">
-              <div class="radio-group">
-                <div class="radio-item">
-                  <input type="radio" id="true" value="正确" v-model="questionForm.answer">
-                  <label for="true">正确</label>
-                </div>
-                <div class="radio-item">
-                  <input type="radio" id="false" value="错误" v-model="questionForm.answer">
-                  <label for="false">错误</label>
-                </div>
-              </div>
+            <div v-else-if="questionForm.type === '判断题'">
+              <el-radio-group v-model="questionForm.answer">
+                <el-radio label="正确">正确</el-radio>
+                <el-radio label="错误">错误</el-radio>
+              </el-radio-group>
             </div>
             
             <!-- 填空题/简答题答案 -->
             <div v-else>
-              <textarea 
-                v-model="questionForm.answer" 
-                class="form-textarea"
-                rows="3"
+              <el-input
+                v-model="questionForm.answer"
+                type="textarea"
+                :rows="3"
                 placeholder="请输入答案"
-              ></textarea>
+              />
             </div>
-          </div>
+          </el-form-item>
           
-          <!-- 解析部分 -->
-          <div class="form-group">
-            <label>解析</label>
-            <textarea 
-              v-model="questionForm.analysis" 
-              class="form-textarea"
-              rows="3"
+          <el-form-item label="解析" prop="analysis">
+            <el-input
+              v-model="questionForm.analysis"
+              type="textarea"
+              :rows="3"
               placeholder="请输入试题解析"
-            ></textarea>
-          </div>
+            />
+          </el-form-item>
         </div>
         
         <div class="modal-footer">
@@ -708,6 +706,8 @@ const showImportDialog = () => {
 // 关闭导入模态框
 const closeImportDialog = () => {
   showImportDialogFlag.value = false
+  selectedFile.value = null
+  importPreview.value = []
 }
 
 // 处理文件选择
@@ -824,17 +824,54 @@ const jumpToPage = () => {
 .btn {
   padding: 8px 15px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   display: flex;
   align-items: center;
   gap: 5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s, height 0.5s;
+}
+
+.btn:active::before {
+  width: 100px;
+  height: 100px;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.95);
 }
 
 .btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .btn.small {
@@ -847,9 +884,19 @@ const jumpToPage = () => {
   color: white;
 }
 
+.btn.primary:hover:not(:disabled) {
+  background-color: #0052a3;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
 .btn.secondary {
   background-color: #6c757d;
   color: white;
+}
+
+.btn.secondary:hover:not(:disabled) {
+  background-color: #545b62;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
 .btn.danger {
@@ -857,9 +904,19 @@ const jumpToPage = () => {
   color: white;
 }
 
+.btn.danger:hover:not(:disabled) {
+  background-color: #c82333;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
 .btn.warning {
   background-color: #ffc107;
   color: #212529;
+}
+
+.btn.warning:hover:not(:disabled) {
+  background-color: #e0a800;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
 }
 
 .btn.success {
@@ -867,24 +924,9 @@ const jumpToPage = () => {
   color: white;
 }
 
-.btn.primary:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-.btn.secondary:hover:not(:disabled) {
-  background-color: #5a6268;
-}
-
-.btn.danger:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.btn.warning:hover:not(:disabled) {
-  background-color: #e0a800;
-}
-
 .btn.success:hover:not(:disabled) {
   background-color: #218838;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 /* 表单样式 */
@@ -904,16 +946,14 @@ const jumpToPage = () => {
 .form-textarea,
 .form-file {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 10px 12px;
+  border: 2px solid #e1e8ff;
+  border-radius: 8px;
   font-size: 14px;
   box-sizing: border-box;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #fff;
+  position: relative;
 }
 
 .form-input:focus,
@@ -921,6 +961,15 @@ const jumpToPage = () => {
 .form-textarea:focus {
   outline: none;
   border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover {
+  border-color: #b3d1ff;
+  background-color: #f8fbff;
 }
 
 .jump-input {
@@ -931,6 +980,7 @@ const jumpToPage = () => {
 /* 数据表格 */
 .table-container {
   overflow-x: auto;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .data-table {
@@ -944,6 +994,7 @@ const jumpToPage = () => {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid #dee2e6;
+  transition: all 0.2s ease;
 }
 
 .data-table th {
@@ -952,10 +1003,33 @@ const jumpToPage = () => {
   color: #333;
   position: sticky;
   top: 0;
+  z-index: 10;
+}
+
+.data-table tbody tr {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.data-table tbody tr::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background-color: transparent;
+  transition: background-color 0.3s;
 }
 
 .data-table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: #f8f9ff;
+  transform: translateX(3px);
+}
+
+.data-table tbody tr:hover::before {
+  background-color: #0066cc;
 }
 
 .action-buttons {
@@ -1001,16 +1075,52 @@ const jumpToPage = () => {
 }
 
 .page-number {
-  padding: 5px 10px;
+  padding: 6px 12px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.page-number::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(0, 102, 204, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.page-number:hover::before {
+  width: 30px;
+  height: 30px;
+}
+
+.page-number:hover {
+  border-color: #0066cc;
+  background-color: #f0f8ff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
 }
 
 .page-number.active {
   background-color: #0066cc;
   color: white;
   border-color: #0066cc;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.page-number.active:hover {
+  background-color: #0052a3;
+  transform: scale(1.1) translateY(-2px);
 }
 
 .page-jump {
@@ -1031,17 +1141,34 @@ const jumpToPage = () => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
 }
 
 .modal-content {
   background-color: white;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 80%;
   max-width: 600px;
   max-height: 80vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0066cc, #00a8ff, #0066cc);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
 
 .modal-content.large {
@@ -1067,10 +1194,43 @@ const jumpToPage = () => {
   font-size: 24px;
   cursor: pointer;
   color: #999;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.close-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.close-btn:hover::before {
+  width: 40px;
+  height: 40px;
 }
 
 .close-btn:hover {
-  color: #333;
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.close-btn:active {
+  transform: rotate(90deg) scale(0.95);
 }
 
 .modal-body {

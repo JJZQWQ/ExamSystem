@@ -1,236 +1,434 @@
 <template>
-  <div class="exam-score-management">
-    <h1>成绩管理</h1>
-    
-    <!-- 顶部操作栏 -->
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <button class="btn primary" @click="openExamSearch">选择考试</button>
-        <button class="btn secondary" :disabled="!selectedExam">导出</button>
+  <div class="score-management">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h1 class="page-title animate__animated animate__fadeInLeft">
+        <el-icon><DataAnalysis /></el-icon>
+        成绩管理
+      </h1>
+      <div class="page-stats animate__animated animate__fadeInRight">
+        <el-statistic title="总考试数" :value="totalExams" />
+        <el-statistic title="待批阅" :value="pendingCount" />
+        <el-statistic title="已批阅" :value="completedCount" />
       </div>
     </div>
-    
+
+    <!-- 顶部操作栏 -->
+    <div class="toolbar animate__animated animate__fadeInDown">
+      <div class="toolbar-left">
+        <el-button 
+          type="primary" 
+          size="large"
+          @click="openExamSearch"
+          class="action-btn"
+        >
+          <el-icon><Search /></el-icon>
+          选择考试
+        </el-button>
+        <el-button 
+          type="success" 
+          size="large"
+          :disabled="!selectedExam"
+          @click="exportScores"
+          class="action-btn"
+        >
+          <el-icon><Download /></el-icon>
+          导出成绩
+        </el-button>
+        <el-button 
+          type="warning" 
+          size="large"
+          :disabled="!selectedExam"
+          @click="batchGrade"
+          class="action-btn"
+        >
+          <el-icon><EditPen /></el-icon>
+          批量批阅
+        </el-button>
+      </div>
+      <div class="toolbar-right">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索学生姓名或学号..."
+          :prefix-icon="Search"
+          class="search-input"
+          clearable
+          @input="handleSearch"
+        />
+      </div>
+    </div>
+
     <!-- 默认显示所有考试列表 -->
-    <div v-if="!selectedExam" class="all-exams">
-      <h2>所有考试</h2>
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>考试名称</th>
-              <th>考试分类</th>
-              <th>总分</th>
-              <th>结束时间</th>
-              <th>创建人</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="exam in examList" :key="exam.id">
-              <td>{{ exam.name }}</td>
-              <td>{{ exam.category }}</td>
-              <td>{{ exam.totalScore }}</td>
-              <td>{{ exam.endTime }}</td>
-              <td>{{ exam.creator }}</td>
-              <td>{{ exam.createTime }}</td>
-              <td>
-                <button class="btn small primary" @click="selectExam(exam)">查看</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div v-if="!selectedExam" class="exam-list-container animate__animated animate__fadeInUp">
+      <div class="section-header">
+        <h2>所有考试</h2>
+        <el-radio-group v-model="viewMode" size="large">
+          <el-radio-button label="table">表格视图</el-radio-button>
+          <el-radio-button label="card">卡片视图</el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <!-- 表格视图 -->
+      <div v-if="viewMode === 'table'" class="table-view">
+        <el-table
+          :data="filteredExamList"
+          stripe
+          style="width: 100%"
+          @selection-change="handleExamSelectionChange"
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="name" label="考试名称" min-width="200" />
+          <el-table-column prop="category" label="考试分类" width="120">
+            <template #default="{ row }">
+              <el-tag :type="getCategoryType(row.category)">{{ row.category }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="totalScore" label="总分" width="100" />
+          <el-table-column prop="endTime" label="结束时间" width="180" />
+          <el-table-column prop="creator" label="创建人" width="120" />
+          <el-table-column prop="createTime" label="创建时间" width="180" />
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button 
+                type="primary" 
+                size="small"
+                @click="selectExam(row)"
+              >
+                查看成绩
+              </el-button>
+              <el-dropdown>
+                <el-button type="info" size="small">
+                  更多<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="viewExamStats(row)">
+                      <el-icon><DataAnalysis /></el-icon>统计分析
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="exportExamScores(row)">
+                      <el-icon><Download /></el-icon>导出成绩
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <!-- 卡片视图 -->
+      <div v-else class="card-view">
+        <el-row :gutter="20">
+          <el-col 
+            v-for="exam in filteredExamList" 
+            :key="exam.id"
+            :span="8"
+            style="margin-bottom: 20px"
+          >
+            <el-card class="exam-card" shadow="hover" @click="selectExam(exam)">
+              <div class="card-header">
+                <h3>{{ exam.name }}</h3>
+                <el-tag :type="getCategoryType(exam.category)">{{ exam.category }}</el-tag>
+              </div>
+              <div class="card-content">
+                <div class="info-item">
+                  <el-icon><User /></el-icon>
+                  <span>创建人：{{ exam.creator }}</span>
+                </div>
+                <div class="info-item">
+                  <el-icon><Timer /></el-icon>
+                  <span>结束时间：{{ exam.endTime }}</span>
+                </div>
+                <div class="info-item">
+                  <el-icon><Star /></el-icon>
+                  <span>总分：{{ exam.totalScore }}</span>
+                </div>
+              </div>
+              <div class="card-footer">
+                <el-button type="primary" size="small" @click.stop="selectExam(exam)">
+                  查看成绩
+                </el-button>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
       </div>
     </div>
     
     <!-- 选中的考试信息 -->
-    <div v-else>
-      <div class="selected-exam-info">
-        <div class="info-row">
-          <span class="label">考试名称：</span>
-          <span>{{ selectedExam.name }}</span>
+    <div v-else class="exam-details-container animate__animated animate__fadeInUp">
+      <!-- 考试信息卡片 -->
+      <el-card class="exam-info-card">
+        <div class="exam-info">
+          <div class="info-grid">
+            <div class="info-item">
+              <label>考试名称</label>
+              <span>{{ selectedExam.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>创建人</label>
+              <span>{{ selectedExam.creator }}</span>
+            </div>
+            <div class="info-item">
+              <label>开始时间</label>
+              <span>{{ selectedExam.startTime }}</span>
+            </div>
+            <div class="info-item">
+              <label>结束时间</label>
+              <span>{{ selectedExam.endTime }}</span>
+            </div>
+            <div class="info-item">
+              <label>总分</label>
+              <span>{{ selectedExam.totalScore }}</span>
+            </div>
+            <div class="info-item">
+              <label>参考人数</label>
+              <span>{{ studentScores.length }}</span>
+            </div>
+          </div>
         </div>
-        <div class="info-row">
-          <span class="label">创建人：</span>
-          <span>{{ selectedExam.creator }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">开始时间：</span>
-          <span>{{ selectedExam.startTime }}</span>
-        </div>
-      </div>
+      </el-card>
       
-      <!-- 考试人员具体信息 -->
-      <div class="exam-details">
-        <h2>考试人员信息</h2>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>学号</th>
-                <th>姓名</th>
-                <th>班级</th>
-                <th>得分</th>
-                <th>提交时间</th>
-                <th>状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(student, index) in studentScores" :key="index">
-                <td>{{ student.id }}</td>
-                <td>{{ student.name }}</td>
-                <td>{{ student.class }}</td>
-                <td>{{ student.score }}</td>
-                <td>{{ student.submitTime }}</td>
-                <td>
-                  <span :class="['status-tag', student.statusClass]">{{ student.status }}</span>
-                </td>
-                <td>
-                  <button class="btn small secondary" @click="viewPaper(student)">查看详情</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- 成绩统计图表 -->
+      <el-card class="stats-card">
+        <div class="stats-header">
+          <h3>成绩统计</h3>
         </div>
-      </div>
+        <div class="stats-content">
+          <el-row :gutter="20">
+            <el-col :span="6">
+              <div class="stat-item">
+                <div class="stat-value">{{ averageScore }}</div>
+                <div class="stat-label">平均分</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="stat-item">
+                <div class="stat-value">{{ highestScore }}</div>
+                <div class="stat-label">最高分</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="stat-item">
+                <div class="stat-value">{{ lowestScore }}</div>
+                <div class="stat-label">最低分</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="stat-item">
+                <div class="stat-value">{{ passRate }}%</div>
+                <div class="stat-label">及格率</div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+      </el-card>
+      
+      <!-- 学生成绩表格 -->
+      <el-card class="score-table-card">
+        <div class="table-header">
+          <h3>学生成绩明细</h3>
+          <div class="table-actions">
+            <el-button type="success" size="small" @click="batchGrade">
+              批量批阅
+            </el-button>
+            <el-button type="primary" size="small" @click="exportScores">
+              导出成绩
+            </el-button>
+          </div>
+        </div>
+        
+        <el-table
+          :data="filteredStudentScores"
+          stripe
+          style="width: 100%"
+          @selection-change="handleStudentSelectionChange"
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="id" label="学号" width="120" />
+          <el-table-column prop="name" label="姓名" width="100" />
+          <el-table-column prop="class" label="班级" min-width="150" />
+          <el-table-column prop="score" label="得分" width="100">
+            <template #default="{ row }">
+              <span :class="getScoreClass(row.score)">{{ row.score }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="submitTime" label="提交时间" width="180" />
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button 
+                type="primary" 
+                size="small"
+                @click="viewPaper(row)"
+              >
+                查看详情
+              </el-button>
+              <el-button 
+                v-if="row.status === '待批阅'"
+                type="success" 
+                size="small"
+                @click="gradePaper(row)"
+              >
+                批阅
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <!-- 分页 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="filteredStudentScores.length"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+      </el-card>
       
       <!-- 返回按钮 -->
       <div class="form-actions">
-        <button class="btn secondary" @click="backToExamList">返回考试列表</button>
+        <el-button size="large" @click="backToExamList">
+          <el-icon><ArrowLeft /></el-icon>
+          返回考试列表
+        </el-button>
       </div>
     </div>
     
-    <!-- 考试搜索模态框 -->
-    <div v-if="showExamSearchModal" class="modal-overlay" @click="closeExamSearch">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>选择考试</h3>
-          <button class="close-btn" @click="closeExamSearch">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <!-- 搜索条件 -->
-          <div class="search-filters">
-            <div class="filter-group">
-              <label>考试名称</label>
-              <input 
-                type="text" 
-                v-model="searchParams.examName" 
+    <!-- 考试搜索对话框 -->
+    <el-dialog
+      v-model="showExamSearchModal"
+      title="选择考试"
+      width="80%"
+      :before-close="closeExamSearch"
+      class="exam-search-dialog"
+    >
+      <div class="search-content">
+        <!-- 搜索条件 -->
+        <div class="search-filters">
+          <el-form :model="searchParams" inline>
+            <el-form-item label="考试名称">
+              <el-input
+                v-model="searchParams.examName"
                 placeholder="请输入考试名称"
-                class="form-input"
+                clearable
+                style="width: 200px"
+              />
+            </el-form-item>
+            <el-form-item label="考试分类">
+              <el-select 
+                v-model="searchParams.category" 
+                placeholder="全部分类"
+                clearable
+                style="width: 150px"
               >
-            </div>
-            
-            <div class="filter-group">
-              <label>考试分类</label>
-              <select v-model="searchParams.category" class="form-select">
-                <option value="">全部分类</option>
-                <option value="期末考试">期末考试</option>
-                <option value="期中考试">期中考试</option>
-                <option value="模拟考试">模拟考试</option>
-              </select>
-            </div>
-            
-            <div class="filter-group">
-              <label>考试时间</label>
-              <div class="time-range">
-                <input 
-                  type="date" 
-                  v-model="searchParams.startTime"
-                  class="form-input"
-                >
-                <span>至</span>
-                <input 
-                  type="date" 
-                  v-model="searchParams.endTime"
-                  class="form-input"
-                >
-              </div>
-            </div>
-            
-            <div class="filter-actions">
-              <button class="btn primary" @click="searchExams">搜索</button>
-            </div>
-          </div>
-          
-          <!-- 搜索结果 -->
-          <div class="search-results">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th width="5%"></th>
-                  <th>考试名称</th>
-                  <th>考试分类</th>
-                  <th>总分</th>
-                  <th>结束时间</th>
-                  <th>创建人</th>
-                  <th>创建时间</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr 
-                  v-for="(exam, index) in examList" 
-                  :key="exam.id"
-                  :class="{ selected: selectedExamInModal && selectedExamInModal.id === exam.id }"
-                  @click="selectExamInModal(exam)"
-                >
-                  <td>
-                    <input 
-                      type="radio" 
-                      :checked="selectedExamInModal && selectedExamInModal.id === exam.id"
-                      @click.stop="selectExamInModal(exam)"
-                    >
-                  </td>
-                  <td>{{ exam.name }}</td>
-                  <td>{{ exam.category }}</td>
-                  <td>{{ exam.totalScore }}</td>
-                  <td>{{ exam.endTime }}</td>
-                  <td>{{ exam.creator }}</td>
-                  <td>{{ exam.createTime }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                <el-option label="期末考试" value="期末考试" />
+                <el-option label="期中考试" value="期中考试" />
+                <el-option label="模拟考试" value="模拟考试" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="考试时间">
+              <el-date-picker
+                v-model="searchParams.dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                style="width: 240px"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="searchExams">
+                <el-icon><Search /></el-icon>
+                搜索
+              </el-button>
+              <el-button @click="resetSearch">重置</el-button>
+            </el-form-item>
+          </el-form>
         </div>
         
-        <div class="modal-footer">
-          <button class="btn secondary" @click="closeExamSearch">返回</button>
-          <button 
-            class="btn primary" 
+        <!-- 搜索结果 -->
+        <div class="search-results">
+          <el-table
+            :data="filteredExamList"
+            @selection-change="handleExamSelectionChange"
+            highlight-current-row
+            @current-change="selectExamInModal"
+          >
+            <el-table-column type="selection" width="55" />
+            <el-table-column prop="name" label="考试名称" min-width="200" />
+            <el-table-column prop="category" label="考试分类" width="120">
+              <template #default="{ row }">
+                <el-tag :type="getCategoryType(row.category)">{{ row.category }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="totalScore" label="总分" width="100" />
+            <el-table-column prop="endTime" label="结束时间" width="180" />
+            <el-table-column prop="creator" label="创建人" width="120" />
+            <el-table-column prop="createTime" label="创建时间" width="180" />
+          </el-table>
+        </div>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="closeExamSearch">取消</el-button>
+          <el-button 
+            type="primary" 
             @click="confirmExamSelection" 
             :disabled="!selectedExamInModal"
           >
-            确认
-          </button>
-        </div>
-      </div>
-    </div>
+            确认选择
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  DataAnalysis,
+  Search,
+  Download,
+  EditPen,
+  User,
+  Timer,
+  Star,
+  ArrowLeft,
+  ArrowDown
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
-// 控制模态框显示
+// 响应式数据
 const showExamSearchModal = ref(false)
+const viewMode = ref('table')
+const searchKeyword = ref('')
+const selectedExam = ref(null)
+const selectedExamInModal = ref(null)
+const selectedExams = ref([])
+const selectedStudents = ref([])
+const currentPage = ref(1)
+const pageSize = ref(20)
 
 // 搜索参数
 const searchParams = ref({
   examName: '',
   category: '',
-  startTime: '',
-  endTime: ''
+  dateRange: []
 })
-
-// 选中的考试（模态框中）
-const selectedExamInModal = ref(null)
-
-// 选中的考试（主页面中）
-const selectedExam = ref(null)
 
 // 考试列表数据
 const examList = ref([
@@ -313,338 +511,599 @@ const studentScores = ref([
     submitTime: '2023-06-15 15:55',
     status: '已批阅',
     statusClass: 'completed'
+  },
+  {
+    id: '2023005',
+    name: '钱七',
+    class: '软件2023级2班',
+    score: 95,
+    submitTime: '2023-06-15 16:00',
+    status: '已批阅',
+    statusClass: 'completed'
   }
 ])
 
-// 打开考试搜索模态框
+// 计算属性
+const totalExams = computed(() => examList.value.length)
+
+const pendingCount = computed(() => {
+  return studentScores.value.filter(student => student.status === '待批阅').length
+})
+
+const completedCount = computed(() => {
+  return studentScores.value.filter(student => student.status === '已批阅').length
+})
+
+const filteredExamList = computed(() => {
+  let filtered = examList.value
+  
+  if (searchParams.value.examName) {
+    filtered = filtered.filter(exam => 
+      exam.name.toLowerCase().includes(searchParams.value.examName.toLowerCase())
+    )
+  }
+  
+  if (searchParams.value.category) {
+    filtered = filtered.filter(exam => exam.category === searchParams.value.category)
+  }
+  
+  return filtered
+})
+
+const filteredStudentScores = computed(() => {
+  let filtered = studentScores.value
+  
+  if (searchKeyword.value) {
+    filtered = filtered.filter(student => 
+      student.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+      student.id.toLowerCase().includes(searchKeyword.value.toLowerCase())
+    )
+  }
+  
+  return filtered
+})
+
+const averageScore = computed(() => {
+  const scores = studentScores.value.map(s => s.score)
+  return scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0
+})
+
+const highestScore = computed(() => {
+  const scores = studentScores.value.map(s => s.score)
+  return scores.length ? Math.max(...scores) : 0
+})
+
+const lowestScore = computed(() => {
+  const scores = studentScores.value.map(s => s.score)
+  return scores.length ? Math.min(...scores) : 0
+})
+
+const passRate = computed(() => {
+  const passed = studentScores.value.filter(s => s.score >= 60).length
+  return studentScores.value.length ? Math.round((passed / studentScores.value.length) * 100) : 0
+})
+
+// 事件处理函数
+const handleSearch = () => {
+  // 搜索逻辑已在计算属性中处理
+}
+
+const getCategoryType = (category) => {
+  const types = {
+    '期末考试': 'danger',
+    '期中考试': 'warning',
+    '模拟考试': 'info'
+  }
+  return types[category] || 'primary'
+}
+
+const getStatusType = (status) => {
+  return status === '已批阅' ? 'success' : 'warning'
+}
+
+const getScoreClass = (score) => {
+  if (score >= 90) return 'score-excellent'
+  if (score >= 80) return 'score-good'
+  if (score >= 60) return 'score-pass'
+  return 'score-fail'
+}
+
 const openExamSearch = () => {
   showExamSearchModal.value = true
   selectedExamInModal.value = null
 }
 
-// 关闭考试搜索模态框
 const closeExamSearch = () => {
   showExamSearchModal.value = false
 }
 
-// 在模态框中选择考试
 const selectExamInModal = (exam) => {
   selectedExamInModal.value = exam
 }
 
-// 确认选择考试
 const confirmExamSelection = () => {
   selectedExam.value = selectedExamInModal.value
   closeExamSearch()
 }
 
-// 直接选择考试（点击查看按钮）
 const selectExam = (exam) => {
   selectedExam.value = exam
 }
 
-// 返回考试列表
 const backToExamList = () => {
   selectedExam.value = null
 }
 
-// 查看试卷详情
 const viewPaper = (student) => {
-  // 跳转到试卷批改页面
   router.push('/exam-paper-review')
 }
 
-// 搜索考试
-const searchExams = () => {
-  // 在实际应用中，这里会调用API进行搜索
-  console.log('搜索参数:', searchParams.value)
-  // 模拟搜索结果
-  alert('搜索完成，请查看结果')
+const gradePaper = (student) => {
+  router.push('/exam-paper-review')
 }
+
+const handleExamSelectionChange = (selection) => {
+  selectedExams.value = selection
+}
+
+const handleStudentSelectionChange = (selection) => {
+  selectedStudents.value = selection
+}
+
+const handleSizeChange = (size) => {
+  pageSize.value = size
+}
+
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+}
+
+const searchExams = () => {
+  ElMessage.success('搜索完成')
+}
+
+const resetSearch = () => {
+  searchParams.value = {
+    examName: '',
+    category: '',
+    dateRange: []
+  }
+}
+
+const exportScores = () => {
+  ElMessage.success('成绩导出成功')
+}
+
+const batchGrade = () => {
+  if (selectedStudents.value.length === 0) {
+    ElMessage.warning('请选择要批阅的学生')
+    return
+  }
+  ElMessageBox.confirm(
+    `确定要批量批阅选中的 ${selectedStudents.value.length} 份试卷吗？`,
+    '批量批阅',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    ElMessage.success('批量批阅成功')
+  })
+}
+
+const viewExamStats = (exam) => {
+  ElMessage.info('查看考试统计分析')
+}
+
+const exportExamScores = (exam) => {
+  ElMessage.success(`${exam.name} 成绩导出成功`)
+}
+
+// 组件挂载
+onMounted(() => {
+  // 初始化逻辑
+})
 </script>
 
 <style scoped>
-.exam-score-management {
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  min-height: calc(100% - 20px);
+.score-management {
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 120px);
 }
 
-.exam-score-management h1 {
-  margin-top: 0;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+/* 页面标题 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.exam-score-management h2 {
-  color: #333;
-  margin: 20px 0;
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
 }
 
-/* 顶部操作栏 */
+.page-stats {
+  display: flex;
+  gap: 32px;
+}
+
+.page-stats :deep(.el-statistic__head) {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.page-stats :deep(.el-statistic__content) {
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* 工具栏 */
 .toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .toolbar-left {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
-.btn {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 4px;
+.action-btn {
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+  width: 300px;
+}
+
+/* 考试列表容器 */
+.exam-list-container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #303133;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* 卡片视图 */
+.card-view {
+  margin-top: 20px;
+}
+
+.exam-card {
   cursor: pointer;
-  font-size: 14px;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.exam-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.card-content {
+  margin-bottom: 16px;
+}
+
+.info-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-}
-
-.btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.btn.small {
-  padding: 5px 10px;
-  font-size: 12px;
-}
-
-.btn.primary {
-  background-color: #0066cc;
-  color: white;
-}
-
-.btn.secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn.primary:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-.btn.secondary:hover:not(:disabled) {
-  background-color: #5a6268;
-}
-
-/* 所有考试列表 */
-.all-exams {
-  margin-top: 20px;
-}
-
-/* 选中的考试信息 */
-.selected-exam-info {
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.info-row {
+  gap: 8px;
   margin-bottom: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.card-footer {
+  text-align: right;
+}
+
+/* 考试详情容器 */
+.exam-details-container {
   display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.info-row:last-child {
-  margin-bottom: 0;
+.exam-info-card,
+.stats-card,
+.score-table-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-.label {
-  font-weight: bold;
-  width: 100px;
-  color: #333;
+.exam-info {
+  padding: 8px;
 }
 
-/* 考试详情 */
-.exam-details {
-  margin-top: 20px;
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
 }
 
-/* 表格容器 */
-.table-container {
-  overflow-x: auto;
+.info-grid .info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* 数据表格 */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
+.info-grid .info-item label {
+  font-weight: 600;
+  color: #909399;
+  font-size: 14px;
+}
+
+.info-grid .info-item span {
+  color: #303133;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* 统计卡片 */
+.stats-header {
   margin-bottom: 20px;
 }
 
-.data-table th,
-.data-table td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #dee2e6;
+.stats-header h3 {
+  margin: 0;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.data-table th {
-  background-color: #f8f9fa;
-  font-weight: bold;
-  color: #333;
-  position: sticky;
-  top: 0;
+.stats-content {
+  padding: 8px;
 }
 
-.data-table tbody tr:hover {
-  background-color: #f8f9fa;
+.stat-item {
+  text-align: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
-.data-table tbody tr.selected {
-  background-color: #e6f7ff;
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.status-tag {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #409eff;
+  margin-bottom: 4px;
 }
 
-.status-tag.completed {
-  background-color: #d4edda;
-  color: #155724;
+.stat-label {
+  font-size: 14px;
+  color: #606266;
 }
 
-.status-tag.pending {
-  background-color: #fff3cd;
-  color: #856404;
+/* 成绩表格 */
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.table-header h3 {
+  margin: 0;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.score-excellent {
+  color: #67c23a;
+  font-weight: 700;
+}
+
+.score-good {
+  color: #409eff;
+  font-weight: 600;
+}
+
+.score-pass {
+  color: #e6a23c;
+  font-weight: 500;
+}
+
+.score-fail {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 /* 表单操作 */
 .form-actions {
   display: flex;
-  justify-content: flex-start;
-  margin-top: 20px;
-}
-
-/* 模态框 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 1000;
+  margin-top: 24px;
 }
 
-.modal-content {
-  background-color: white;
-  border-radius: 8px;
-  width: 80%;
-  max-width: 800px;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+/* 对话框样式 */
+:deep(.exam-search-dialog .el-dialog) {
+  border-radius: 16px;
 }
 
-.modal-header {
-  padding: 15px 20px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+:deep(.exam-search-dialog .el-dialog__header) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 16px 16px 0 0;
 }
 
-.modal-header h3 {
-  margin: 0;
-  color: #333;
+:deep(.exam-search-dialog .el-dialog__title) {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #999;
+:deep(.exam-search-dialog .el-dialog__headerbtn .el-dialog__close) {
+  color: white;
+  font-size: 20px;
 }
 
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
-  flex: 1;
+.search-content {
+  max-height: 60vh;
   overflow-y: auto;
 }
 
-.modal-footer {
-  padding: 15px 20px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-/* 搜索过滤器 */
 .search-filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 20px;
   background-color: #f8f9fa;
-  border-radius: 4px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
-.filter-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-input,
-.form-select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #0066cc;
-}
-
-.time-range {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.time-range span {
-  white-space: nowrap;
-}
-
-.filter-actions {
-  display: flex;
-  align-items: flex-end;
-}
-
-/* 搜索结果 */
 .search-results {
   margin-top: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .page-stats {
+    gap: 20px;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .score-management {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .page-stats {
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .toolbar-left {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .table-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+  }
+  
+  .exam-card {
+    margin-bottom: 16px;
+  }
 }
 </style>
