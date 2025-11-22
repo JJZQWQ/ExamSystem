@@ -90,7 +90,6 @@
         style="width: 100%"
         :row-class-name="tableRowClassName"
         @selection-change="handleSelectionChange"
-        @row-click="handleRowClick"
         stripe
         highlight-current-row
         empty-text="暂无考试数据"
@@ -164,50 +163,7 @@
         <el-table-column label="操作" width="220" align="center">
           <template #default="scope">
             <div class="action-buttons">
-              <el-tooltip content="配置考试" placement="top">
-                <el-button
-                  type="primary"
-                  size="small"
-                  circle
-                  @click.stop="handleConfigExam(scope.row)"
-                >
-                  <el-icon><Setting /></el-icon>
-                </el-button>
-              </el-tooltip>
 
-              <el-tooltip content="统计分析" placement="top">
-                <el-button
-                  type="success"
-                  size="small"
-                  circle
-                  @click.stop="handleAnalyzeExam(scope.row)"
-                >
-                  <el-icon><TrendCharts /></el-icon>
-                </el-button>
-              </el-tooltip>
-
-              <el-tooltip content="成绩批改" placement="top">
-                <el-button
-                  type="warning"
-                  size="small"
-                  circle
-                  @click.stop="handleGradeExam(scope.row)"
-                  :disabled="scope.row.status !== '已完成'"
-                >
-                  <el-icon><EditPen /></el-icon>
-                </el-button>
-              </el-tooltip>
-
-              <el-tooltip content="试卷预览" placement="top">
-                <el-button
-                  type="info"
-                  size="small"
-                  circle
-                  @click.stop="handlePreviewExam(scope.row)"
-                >
-                  <el-icon><View /></el-icon>
-                </el-button>
-              </el-tooltip>
 
               <el-dropdown trigger="click" @command="(command) => handleMoreAction(command, scope.row)">
                 <el-button size="small" circle>
@@ -263,10 +219,6 @@ import {
   Search,
   Document,
   Clock,
-  Setting,
-  TrendCharts,
-  EditPen,
-  View,
   MoreFilled,
   Edit,
   CopyDocument,
@@ -451,71 +403,31 @@ const handleSelectionChange = (selection) => {
   selectedExams.value = selection
 }
 
-const handleRowClick = (row) => {
-  ElMessage.info(`查看考试详情: ${row.name}`)
-}
-
 const handleSearch = () => {
   pagination.currentPage = 1
-}
-
-const handleConfigExam = (exam) => {
-  ElMessage.info(`配置考试: ${exam.name}`)
-}
-
-const handleAnalyzeExam = (exam) => {
-  ElMessage.info(`分析考试: ${exam.name}`)
-}
-
-const handleGradeExam = (exam) => {
-  ElMessage.info(`批改考试: ${exam.name}`)
-}
-
-const handlePreviewExam = (exam) => {
-  ElMessage.info(`预览考试: ${exam.name}`)
 }
 
 const handleMoreAction = (command, exam) => {
   switch (command) {
     case 'edit':
-      handleEditExam(exam)
-      break
     case 'copy':
-      handleCopyExam(exam)
-      break
     case 'export':
-      handleExportExam(exam)
+      ElMessage.info(`${command} 功能开发中`)
       break
     case 'delete':
-      handleDeleteExam(exam)
+      ElMessageBox.confirm(
+        `确定要删除考试 "${exam.name}" 吗？`,
+        '删除考试',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      ).then(() => {
+        ElMessage.success('删除成功')
+      }).catch(() => {})
       break
   }
-}
-
-const handleEditExam = (exam) => {
-  ElMessage.info(`编辑考试: ${exam.name}`)
-}
-
-const handleCopyExam = (exam) => {
-  ElMessage.success(`复制考试: ${exam.name}`)
-}
-
-const handleExportExam = (exam) => {
-  ElMessage.success(`导出考试: ${exam.name}`)
-}
-
-const handleDeleteExam = (exam) => {
-  ElMessageBox.confirm(
-    `确定要删除考试 "${exam.name}" 吗？`,
-    '删除考试',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    ElMessage.success('删除成功')
-  }).catch(() => {})
 }
 
 const handleSizeChange = (size) => {

@@ -45,14 +45,12 @@
             :prefix-icon="Lock"
             :suffix-icon="showPassword ? View : Hide"
             @click-suffix="togglePasswordVisibility"
-            show-password
             class="form-input"
           />
         </el-form-item>
 
-        <!-- 记住密码和忘记密码 -->
+        <!-- 忘记密码 -->
         <div class="form-options">
-          <el-checkbox v-model="rememberMe">记住密码</el-checkbox>
           <el-button type="primary" link @click="forgotPassword">忘记密码？</el-button>
         </div>
 
@@ -69,23 +67,7 @@
           </el-button>
         </el-form-item>
 
-        <!-- 其他登录方式 -->
-        <div class="other-login">
-          <el-divider>
-            <span class="divider-text">其他登录方式</span>
-          </el-divider>
-          <div class="social-login">
-            <el-button circle size="large" class="social-btn wechat">
-              <el-icon><ChatDotRound /></el-icon>
-            </el-button>
-            <el-button circle size="large" class="social-btn qq">
-              <el-icon><Promotion /></el-icon>
-            </el-button>
-            <el-button circle size="large" class="social-btn email">
-              <el-icon><Message /></el-icon>
-            </el-button>
-          </div>
-        </div>
+
       </el-form>
 
       <!-- 底部信息 -->
@@ -154,6 +136,7 @@ import {
   DataAnalysis,
   Monitor
 } from '@element-plus/icons-vue'
+import authService from '../../api/auth/auth.js'
 
 const router = useRouter()
 const loginFormRef = ref()
@@ -179,7 +162,6 @@ const loginRules = {
 // 控制状态
 const showPassword = ref(false)
 const isLoading = ref(false)
-const rememberMe = ref(false)
 
 // 切换密码可见性
 const togglePasswordVisibility = () => {
@@ -193,45 +175,42 @@ const forgotPassword = () => {
 
 // 处理登录
 const handleLogin = async () => {
-  if (!loginFormRef.value) return
-  
-  try {
-    // 表单验证
-    await loginFormRef.value.validate()
+    if (!loginFormRef.value) return
     
     isLoading.value = true
     
-    // 模拟登录请求
-    setTimeout(() => {
-      console.log('登录信息:', {
+    try {
+      // 表单验证
+      await loginFormRef.value.validate()
+      
+      // 调用登录API
+      const response = await authService.login({
         username: loginForm.username,
-        password: loginForm.password,
-        rememberMe: rememberMe.value
+        password: loginForm.password
       })
-
-      // 模拟登录成功
+      
+      // 保存token到本地存储
+      localStorage.setItem('token', response.token || 'mock-token-for-test')
+      
       ElMessage.success('登录成功！')
       
       isLoading.value = false
       
       // 跳转到首页
       router.push('/home')
-    }, 1500)
-    
-  } catch (error) {
-    console.log('表单验证失败:', error)
+    } catch (error) {
+      isLoading.value = false
+      // 如果是表单验证错误，不显示额外消息
+      if (error.name !== 'Error') {
+        console.log('表单验证失败:', error)
+      } else {
+        ElMessage.error('登录失败，请检查用户名和密码')
+        console.error('登录错误:', error)
+      }
+    }
   }
-}
 
-// 组件挂载时的初始化
-onMounted(() => {
-  // 如果有记住的密码，可以在这里恢复
-  const savedUsername = localStorage.getItem('rememberedUsername')
-  if (savedUsername) {
-    loginForm.username = savedUsername
-    rememberMe.value = true
-  }
-})
+
 </script>
 
 <style scoped>

@@ -169,7 +169,10 @@
                       <el-icon :size="32"><component :is="stat.icon" /></el-icon>
                     </div>
                     <div class="stat-info">
-                      <div class="stat-number">{{ stat.value }}</div>
+                      <div class="stat-number">
+                        <el-skeleton v-if="statsLoading" :rows="1" animated />
+                        <template v-else>{{ stat.value }}</template>
+                      </div>
                       <div class="stat-label">{{ stat.label }}</div>
                       <div class="stat-desc">{{ stat.description }}</div>
                       <div class="stat-trend" :class="stat.trendClass">
@@ -224,21 +227,31 @@
                   </template>
 
                   <div class="notification-list">
-                    <div
-                      v-for="(notification, index) in notifications"
-                      :key="index"
-                      class="notification-item"
-                      :class="{ 'unread': !notification.read }"
-                    >
-                      <div class="notification-icon" :class="notification.type">
-                        <el-icon><component :is="notification.icon" /></el-icon>
+                    <template v-if="notificationLoading">
+                      <div v-for="i in 3" :key="i" class="notification-item">
+                        <el-skeleton :rows="3" animated />
                       </div>
-                      <div class="notification-content">
-                        <div class="notification-title">{{ notification.title }}</div>
-                        <div class="notification-desc">{{ notification.description }}</div>
-                        <div class="notification-time">{{ notification.time }}</div>
+                    </template>
+                    <template v-else>
+                      <div
+                        v-for="(notification, index) in notifications"
+                        :key="index"
+                        class="notification-item"
+                        :class="{ 'unread': !notification.read }"
+                      >
+                        <div class="notification-icon" :class="notification.type">
+                          <el-icon><component :is="notification.icon" /></el-icon>
+                        </div>
+                        <div class="notification-content">
+                          <div class="notification-title">{{ notification.title }}</div>
+                          <div class="notification-desc">{{ notification.description }}</div>
+                          <div class="notification-time">{{ notification.time }}</div>
+                        </div>
                       </div>
-                    </div>
+                      <div v-if="notifications.length === 0" class="empty-notification">
+                        暂无通知
+                      </div>
+                    </template>
                   </div>
                 </el-card>
               </el-col>
@@ -264,6 +277,7 @@
               </template>
 
               <el-table
+                v-loading="examLoading"
                 :data="filteredRecentExams"
                 style="width: 100%"
                 stripe
@@ -272,6 +286,7 @@
                 :default-sort="{ prop: 'time', order: 'descending' }"
                 :flexible="true"
                 table-layout="auto"
+                empty-text="暂无考试数据"
               >
                 <el-table-column prop="name" label="考试名称" min-width="180" show-overflow-tooltip>
                   <template #default="scope">
@@ -422,6 +437,13 @@ import {
   SuccessFilled,
   InfoFilled
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { examService } from '../../api/exam/exam'
+import { scoreService } from '../../api/exam/score'
+import { userService } from '../../api/user/user'
+import { questionService } from '../../api/question/question'
 
 const router = useRouter()
 
@@ -434,7 +456,13 @@ const examSearchText = ref('')
 const userName = ref('管理员')
 const userAvatar = ref('')
 const isDarkMode = ref(false)
-const notificationCount = ref(3)
+const notificationCount = ref(0)
+
+// 数据加载状态
+const loading = ref(false)
+const statsLoading = ref(false)
+const notificationLoading = ref(false)
+const examLoading = ref(false)
 
 // 移动端相关
 const isMobile = ref(false)
@@ -481,52 +509,21 @@ const currentDate = computed(() => {
 })
 
 // 统计数据
-const statsData = ref([
-  {
-    label: '今日考试',
-    value: '5',
-    description: '正在进行',
-    icon: 'Document',
-    iconClass: 'today-exam',
-    trend: '+12%',
-    trendIcon: 'ArrowUp',
-    trendClass: 'trend-up',
-    route: '/home/examination/current'
-  },
-  {
-    label: '待批阅试卷',
-    value: '12',
-    description: '需要处理',
-    icon: 'EditPen',
-    iconClass: 'pending-review',
-    trend: '+8%',
-    trendIcon: 'ArrowUp',
-    trendClass: 'trend-up',
-    route: '/home/exam/score'
-  },
-  {
-    label: '用户总数',
-    value: '1,248',
-    description: '活跃用户',
-    icon: 'User',
-    iconClass: 'total-users',
-    trend: '+5%',
-    trendIcon: 'ArrowUp',
-    trendClass: 'trend-up',
-    route: '/home/user/student'
-  },
-  {
-    label: '试题总数',
-    value: '3,567',
-    description: '可用试题',
-    icon: 'QuestionFilled',
-    iconClass: 'total-questions',
-    trend: '+15%',
-    trendIcon: 'ArrowUp',
-    trendClass: 'trend-up',
-    route: '/home/question/bank'
-  }
-])
+const statsData = ref([])
+
+// 通知数据
+const notifications = ref([])
+
+// 最近考试数据
+const recentExams = ref([])
+
+// 所有通知
+const allNotifications = computed(() => notifications.value)
+
+// 未读通知
+const unreadNotifications = computed(() =>
+  notifications.value.filter(n => !n.read)
+)
 
 // 快捷操作
 const quickActions = ref([
@@ -560,73 +557,121 @@ const quickActions = ref([
   }
 ])
 
-// 通知数据
-const notifications = ref([
-  {
-    title: '新考试提醒',
-    description: 'Vue.js中级考试将于明天14:00开始',
-    time: '2小时前',
-    type: 'warning',
-    icon: 'Warning',
-    read: false
-  },
-  {
-    title: '系统维护通知',
-    description: '系统将于今晚22:00-24:00进行维护',
-    time: '5小时前',
-    type: 'info',
-    icon: 'InfoFilled',
-    read: false
-  },
-  {
-    title: '成绩发布',
-    description: 'React基础测试成绩已发布',
-    time: '1天前',
-    type: 'success',
-    icon: 'SuccessFilled',
-    read: true
+// 获取统计数据
+const fetchStatsData = async () => {
+  statsLoading.value = true
+  try {
+    // 并行请求所有统计数据
+    const [todayExamsRes, pendingScoresRes, totalUsersRes, totalQuestionsRes] = await Promise.all([
+      examService.getTodayExams(),
+      scoreService.getPendingScores(),
+      userService.getTotalUsers(),
+      questionService.getTotalQuestions()
+    ])
+
+    statsData.value = [
+      {
+        label: '今日考试',
+        value: todayExamsRes.data.total || '0',
+        description: '正在进行',
+        icon: 'Document',
+        iconClass: 'today-exam',
+        trend: '+' + (todayExamsRes.data.increasePercentage || 0) + '%',
+        trendIcon: 'ArrowUp',
+        trendClass: todayExamsRes.data.increasePercentage > 0 ? 'trend-up' : 'trend-down',
+        route: '/home/examination/current'
+      },
+      {
+        label: '待批阅试卷',
+        value: pendingScoresRes.data.total || '0',
+        description: '需要处理',
+        icon: 'EditPen',
+        iconClass: 'pending-review',
+        trend: '+' + (pendingScoresRes.data.increasePercentage || 0) + '%',
+        trendIcon: 'ArrowUp',
+        trendClass: pendingScoresRes.data.increasePercentage > 0 ? 'trend-up' : 'trend-down',
+        route: '/home/exam/score'
+      },
+      {
+        label: '用户总数',
+        value: totalUsersRes.data.total ? totalUsersRes.data.total.toLocaleString() : '0',
+        description: '活跃用户',
+        icon: 'User',
+        iconClass: 'total-users',
+        trend: '+' + (totalUsersRes.data.increasePercentage || 0) + '%',
+        trendIcon: 'ArrowUp',
+        trendClass: totalUsersRes.data.increasePercentage > 0 ? 'trend-up' : 'trend-down',
+        route: '/home/user/student'
+      },
+      {
+        label: '试题总数',
+        value: totalQuestionsRes.data.total ? totalQuestionsRes.data.total.toLocaleString() : '0',
+        description: '可用试题',
+        icon: 'QuestionFilled',
+        iconClass: 'total-questions',
+        trend: '+' + (totalQuestionsRes.data.increasePercentage || 0) + '%',
+        trendIcon: 'ArrowUp',
+        trendClass: totalQuestionsRes.data.increasePercentage > 0 ? 'trend-up' : 'trend-down',
+        route: '/home/question/bank'
+      }
+    ]
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    ElMessage.error('获取统计数据失败')
+    // 使用模拟数据作为备份
+    statsData.value = [
+      { label: '今日考试', value: '5', description: '正在进行', icon: 'Document', iconClass: 'today-exam', trend: '+12%', trendIcon: 'ArrowUp', trendClass: 'trend-up', route: '/home/examination/current' },
+      { label: '待批阅试卷', value: '12', description: '需要处理', icon: 'EditPen', iconClass: 'pending-review', trend: '+8%', trendIcon: 'ArrowUp', trendClass: 'trend-up', route: '/home/exam/score' },
+      { label: '用户总数', value: '1,248', description: '活跃用户', icon: 'User', iconClass: 'total-users', trend: '+5%', trendIcon: 'ArrowUp', trendClass: 'trend-up', route: '/home/user/student' },
+      { label: '试题总数', value: '3,567', description: '可用试题', icon: 'QuestionFilled', iconClass: 'total-questions', trend: '+15%', trendIcon: 'ArrowUp', trendClass: 'trend-up', route: '/home/question/bank' }
+    ]
+  } finally {
+    statsLoading.value = false
   }
-])
+}
 
-// 所有通知
-const allNotifications = computed(() => notifications.value)
-
-// 未读通知
-const unreadNotifications = computed(() =>
-  notifications.value.filter(n => !n.read)
-)
-
-// 最近考试数据
-const recentExams = ref([
-  {
-    name: 'Vue.js中级考试',
-    subject: '前端开发',
-    participants: 45,
-    time: '2023-06-15 14:00',
-    status: '进行中'
-  },
-  {
-    name: 'React基础测试',
-    subject: '前端开发',
-    participants: 32,
-    time: '2023-06-14 10:00',
-    status: '已完成'
-  },
-  {
-    name: 'Java编程实战',
-    subject: '后端开发',
-    participants: 28,
-    time: '2023-06-16 09:30',
-    status: '未开始'
-  },
-  {
-    name: 'Python数据分析',
-    subject: '数据科学',
-    participants: 56,
-    time: '2023-06-13 15:00',
-    status: '已完成'
+// 获取通知数据
+const fetchNotifications = async () => {
+  notificationLoading.value = true
+  try {
+    const response = await examService.getNotifications()
+    notifications.value = response.data || []
+    notificationCount.value = notifications.value.filter(n => !n.read).length
+  } catch (error) {
+    console.error('获取通知数据失败:', error)
+    ElMessage.error('获取通知数据失败')
+    // 使用模拟数据作为备份
+    notifications.value = [
+      { title: '新考试提醒', description: 'Vue.js中级考试将于明天14:00开始', time: '2小时前', type: 'warning', icon: 'Warning', read: false },
+      { title: '系统维护通知', description: '系统将于今晚22:00-24:00进行维护', time: '5小时前', type: 'info', icon: 'InfoFilled', read: false },
+      { title: '成绩发布', description: 'React基础测试成绩已发布', time: '1天前', type: 'success', icon: 'SuccessFilled', read: true }
+    ]
+    notificationCount.value = 2
+  } finally {
+    notificationLoading.value = false
   }
-])
+}
+
+// 获取最近考试数据
+const fetchRecentExams = async () => {
+  examLoading.value = true
+  try {
+    const response = await examService.getRecentExams({ limit: 5 })
+    recentExams.value = response.data || []
+  } catch (error) {
+    console.error('获取最近考试数据失败:', error)
+    ElMessage.error('获取最近考试数据失败')
+    // 使用模拟数据作为备份
+    recentExams.value = [
+      { name: 'Vue.js中级考试', subject: '前端开发', participants: 45, time: '2023-06-15 14:00', status: '进行中' },
+      { name: 'React基础测试', subject: '前端开发', participants: 32, time: '2023-06-14 10:00', status: '已完成' },
+      { name: 'Java编程实战', subject: '后端开发', participants: 28, time: '2023-06-16 09:30', status: '未开始' },
+      { name: 'Python数据分析', subject: '数据科学', participants: 56, time: '2023-06-13 15:00', status: '已完成' }
+    ]
+  } finally {
+    examLoading.value = false
+  }
+}
 
 // 过滤后的考试数据
 const filteredRecentExams = computed(() => {
@@ -841,8 +886,17 @@ onMounted(() => {
   // 监听窗口大小变化
   window.addEventListener('resize', checkMobile)
 
-  // 可以在这里初始化一些数据
-})
+  // 初始化数据
+  loading.value = true
+  Promise.all([
+    fetchStatsData(),
+    fetchNotifications(),
+    fetchRecentExams()
+  ]).catch(error => {
+    console.error('初始化数据失败:', error)
+  }).finally(() => {
+    loading.value = false
+  })
 
 // 组件卸载时清理事件监听
 onUnmounted(() => {
@@ -1364,6 +1418,13 @@ onUnmounted(() => {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+}
+
+.empty-notification {
+  text-align: center;
+  padding: 40px 0;
+  color: #909399;
+  font-size: 14px;
 }
 
 .notification-item::before {

@@ -6,8 +6,16 @@ import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+// 导入Mock服务
+import { startMockService } from './api/mock'
 
 const app = createApp(App)
+
+// 在开发环境中启动Mock服务
+if (import.meta.env.DEV) {
+  startMockService()
+  console.log('开发环境: Mock服务已启动')
+}
 
 // 注册所有Element Plus图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
