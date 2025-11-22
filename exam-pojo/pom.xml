@@ -9,7 +9,6 @@
         <version>1.0.0</version>
     </parent>
 
-    <groupId>org.example</groupId>
     <artifactId>exam-pojo</artifactId>
 
     <properties>
@@ -17,5 +16,25 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <!-- Lombok - 简化实体类代码 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- JPA - 提供实体类ORM支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- 添加对common模块的依赖 -->
+        <dependency>
+            <groupId>com.ant</groupId>
+            <artifactId>exam-common</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

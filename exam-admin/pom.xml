@@ -12,7 +12,6 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.ant</groupId>
     <artifactId>exam-admin</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
@@ -156,8 +155,13 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>com.ant</groupId>
+            <artifactId>exam-pojo</artifactId>
+        </dependency>
     </dependencies>
 
+    <!-- Updated to fix dependency resolution issues -->
     <build>
         <plugins>
             <plugin>
