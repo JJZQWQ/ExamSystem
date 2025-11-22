@@ -2,9 +2,9 @@
   <div class="current-exam">
     <h1>当前考试</h1>
     <div class="exam-list">
-      <div 
-        v-for="exam in currentExams" 
-        :key="exam.id" 
+      <div
+        v-for="exam in currentExams"
+        :key="exam.id"
         class="exam-card"
         @click="enterExam(exam)"
       >
@@ -157,7 +157,7 @@ const enterExam = (exam) => {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -227,7 +227,7 @@ const enterExam = (exam) => {
   position: relative;
   overflow: hidden;
   font-family: inherit;
-  letter-spacing: 0.3px;
+  letter-spacing: 1px;
 }
 
 .btn::before {
@@ -307,42 +307,42 @@ const enterExam = (exam) => {
     padding: 20px;
     border-radius: 8px;
   }
-  
+
   .current-exam h1 {
     font-size: 24px;
     margin-bottom: 20px;
   }
-  
+
   .exam-list {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .exam-card {
     padding: 20px;
     border-radius: 12px;
   }
-  
+
   .exam-header {
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
   }
-  
+
   .exam-header h3 {
     margin-right: 0;
     font-size: 18px;
   }
-  
+
   .exam-status {
     align-self: flex-start;
   }
-  
+
   .exam-details p {
     font-size: 13px;
     margin: 10px 0;
   }
-  
+
   .btn {
     padding: 10px 20px;
     font-size: 13px;
@@ -353,38 +353,38 @@ const enterExam = (exam) => {
   .current-exam {
     padding: 16px;
   }
-  
+
   .current-exam h1 {
     font-size: 20px;
     margin-bottom: 16px;
   }
-  
+
   .exam-card {
     padding: 16px;
     border-radius: 8px;
   }
-  
+
   .exam-header h3 {
     font-size: 16px;
   }
-  
+
   .exam-details p {
     font-size: 12px;
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .exam-details strong {
     min-width: auto;
   }
-  
+
   .btn {
     padding: 8px 16px;
     font-size: 12px;
     width: 100%;
   }
-  
+
   .exam-actions {
     text-align: center;
   }

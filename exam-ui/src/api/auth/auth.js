@@ -1,4 +1,4 @@
-import api from '../axios'
+import { api } from '../axios'
 
 /**
  * 认证相关API服务

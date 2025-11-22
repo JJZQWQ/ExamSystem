@@ -138,7 +138,7 @@ export const api = {
    * @returns {Promise} - 请求Promise
    */
   get(url, params = {}, config = {}) {
-    return api.get(url, { params, ...config })
+    return instance.get(url, { params, ...config })
   },
   
   /**
@@ -149,7 +149,7 @@ export const api = {
    * @returns {Promise} - 请求Promise
    */
   post(url, data = {}, config = {}) {
-    return api.post(url, data, config)
+    return instance.post(url, data, config)
   },
   
   /**
@@ -160,7 +160,7 @@ export const api = {
    * @returns {Promise} - 请求Promise
    */
   put(url, data = {}, config = {}) {
-    return api.put(url, data, config)
+    return instance.put(url, data, config)
   },
   
   /**
@@ -171,7 +171,7 @@ export const api = {
    * @returns {Promise} - 请求Promise
    */
   delete(url, params = {}, config = {}) {
-    return api.delete(url, { params, ...config })
+    return instance.delete(url, { params, ...config })
   },
   
   /**
@@ -182,7 +182,7 @@ export const api = {
    * @returns {Promise} - 请求Promise
    */
   patch(url, data = {}, config = {}) {
-    return api.patch(url, data, config)
+    return instance.patch(url, data, config)
   }
 }
 

@@ -19,7 +19,7 @@
         <el-button
           type="primary"
           size="large"
-          @click="$router.push('/home/exam/create')"
+          @click="$router.push('/home/examination/create')"
           class="action-btn"
         >
           <el-icon><Plus /></el-icon>
@@ -86,7 +86,7 @@
     <!-- 主内容表格区 -->
     <div class="table-container animate__animated animate__fadeInUp">
       <el-table
-        :data="filteredExamList"
+        :data="examList"
         style="width: 100%"
         :row-class-name="tableRowClassName"
         @selection-change="handleSelectionChange"
@@ -246,102 +246,129 @@ const pagination = reactive({
 })
 
 // 考试列表数据
-const examList = ref([
-  {
-    id: 1,
-    name: 'Vue.js中级考试',
-    subject: '前端开发',
-    category: '期末考试',
-    startTime: '2023-06-15 14:00',
-    endTime: '2023-06-15 16:00',
-    participants: 45,
-    creator: '张老师',
-    creatorAvatar: '',
-    createTime: '2023-06-01',
-    status: '进行中'
-  },
-  {
-    id: 2,
-    name: 'React基础测试',
-    subject: '前端开发',
-    category: '期中考试',
-    startTime: '2023-06-14 10:00',
-    endTime: '2023-06-14 11:30',
-    participants: 32,
-    creator: '李老师',
-    creatorAvatar: '',
-    createTime: '2023-05-28',
-    status: '已完成'
-  },
-  {
-    id: 3,
-    name: 'Java编程实战',
-    subject: '后端开发',
-    category: '期末考试',
-    startTime: '2023-06-16 09:30',
-    endTime: '2023-06-16 11:30',
-    participants: 28,
-    creator: '王老师',
-    creatorAvatar: '',
-    createTime: '2023-06-05',
-    status: '未开始'
-  },
-  {
-    id: 4,
-    name: '数据库原理考试',
-    subject: '数据库',
-    category: '期中考试',
-    startTime: '2023-06-10 14:00',
-    endTime: '2023-06-10 16:00',
-    participants: 56,
-    creator: '赵老师',
-    creatorAvatar: '',
-    createTime: '2023-05-25',
-    status: '已完成'
-  },
-  {
-    id: 5,
-    name: 'Python数据分析',
-    subject: '数据科学',
-    category: '模拟考试',
-    startTime: '2023-06-18 10:00',
-    endTime: '2023-06-18 12:00',
-    participants: 38,
-    creator: '陈老师',
-    creatorAvatar: '',
-    createTime: '2023-06-08',
-    status: '未开始'
+const examList = ref([])
+
+// 加载考试列表
+const loadExamList = async () => {
+  try {
+    const params = new URLSearchParams({
+      page: pagination.currentPage,
+      pageSize: pagination.pageSize,
+      search: filters.searchText || '',
+      category: filters.category || '',
+      status: filters.status || ''
+    })
+    
+    const response = await fetch(`/api/exams?${params.toString()}`)
+    const data = await response.json()
+    
+    if (data.success) {
+      // 转换数据格式
+      examList.value = data.data.map(exam => ({
+        id: exam.id.toString(),
+        name: exam.name,
+        subject: exam.subject,
+        category: exam.category,
+        startTime: exam.startTime,
+        endTime: exam.endTime,
+        participants: exam.participants,
+        actualParticipants: exam.actualParticipants || 0,
+        passRate: exam.passRate || 0,
+        status: exam.status,
+        creator: exam.creator,
+        creatorAvatar: exam.creatorAvatar || '',
+        createTime: exam.createTime
+      }))
+      
+      // 更新分页信息
+      pagination.total = data.total
+    } else {
+      ElMessage.error('获取考试列表失败')
+    }
+  } catch (error) {
+    console.error('加载考试列表失败:', error)
+    ElMessage.error('加载考试列表失败')
+    
+    // 回退到模拟数据
+    examList.value = [
+      {
+        id: 1,
+        name: 'Vue.js中级考试',
+        subject: '前端开发',
+        category: '期末考试',
+        startTime: '2023-06-15 14:00',
+        endTime: '2023-06-15 16:00',
+        participants: 45,
+        creator: '张老师',
+        creatorAvatar: '',
+        createTime: '2023-06-01',
+        status: '进行中'
+      },
+      {
+        id: 2,
+        name: 'React基础测试',
+        subject: '前端开发',
+        category: '期中考试',
+        startTime: '2023-06-14 10:00',
+        endTime: '2023-06-14 11:30',
+        participants: 32,
+        creator: '李老师',
+        creatorAvatar: '',
+        createTime: '2023-05-28',
+        status: '已完成'
+      },
+      {
+        id: 3,
+        name: 'Java编程实战',
+        subject: '后端开发',
+        category: '期末考试',
+        startTime: '2023-06-16 09:30',
+        endTime: '2023-06-16 11:30',
+        participants: 28,
+        creator: '王老师',
+        creatorAvatar: '',
+        createTime: '2023-06-05',
+        status: '未开始'
+      },
+      {
+        id: 4,
+        name: '数据库原理考试',
+        subject: '数据库',
+        category: '期中考试',
+        startTime: '2023-06-10 14:00',
+        endTime: '2023-06-10 16:00',
+        participants: 56,
+        creator: '赵老师',
+        creatorAvatar: '',
+        createTime: '2023-05-25',
+        status: '已完成'
+      },
+      {
+        id: 5,
+        name: 'Python数据分析',
+        subject: '数据科学',
+        category: '模拟考试',
+        startTime: '2023-06-18 10:00',
+        endTime: '2023-06-18 12:00',
+        participants: 38,
+        creator: '陈老师',
+        creatorAvatar: '',
+        createTime: '2023-06-08',
+        status: '未开始'
+      }
+    ]
+    pagination.total = examList.value.length
   }
-])
+}
 
 // 计算属性
 const totalExams = computed(() => examList.value.length)
 const runningExams = computed(() => examList.value.filter(exam => exam.status === '进行中').length)
 const completedExams = computed(() => examList.value.filter(exam => exam.status === '已完成').length)
 
-const filteredExamList = computed(() => {
-  let filtered = examList.value
-
-  if (filters.category) {
-    filtered = filtered.filter(exam => exam.category === filters.category)
-  }
-
-  if (filters.status) {
-    filtered = filtered.filter(exam => exam.status === filters.status)
-  }
-
-  if (filters.searchText) {
-    const searchText = filters.searchText.toLowerCase()
-    filtered = filtered.filter(exam =>
-      exam.name.toLowerCase().includes(searchText) ||
-      exam.subject.toLowerCase().includes(searchText)
-    )
-  }
-
-  pagination.total = filtered.length
-  const start = (pagination.currentPage - 1) * pagination.pageSize
-  const end = start + pagination.pageSize
-  return filtered.slice(start, end)
+// 组件挂载
+onMounted(() => {
+  loadExamList()
 })
 
 // 获取状态类型
@@ -405,6 +432,7 @@ const handleSelectionChange = (selection) => {
 
 const handleSearch = () => {
   pagination.currentPage = 1
+  loadExamList()
 }
 
 const handleMoreAction = (command, exam) => {
@@ -433,16 +461,15 @@ const handleMoreAction = (command, exam) => {
 const handleSizeChange = (size) => {
   pagination.pageSize = size
   pagination.currentPage = 1
+  loadExamList()
 }
 
 const handleCurrentChange = (page) => {
   pagination.currentPage = page
+  loadExamList()
 }
 
-// 组件挂载
-onMounted(() => {
-  pagination.total = examList.value.length
-})
+// 组件已正确初始化，无需重复挂载
 </script>
 
 <style scoped>

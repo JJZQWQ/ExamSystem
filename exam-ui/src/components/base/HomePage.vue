@@ -437,13 +437,10 @@ import {
   SuccessFilled,
   InfoFilled
 } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { examService } from '../../api/exam/exam'
-import { scoreService } from '../../api/exam/score'
-import { userService } from '../../api/user/user'
-import { questionService } from '../../api/question/question'
+import examService from '../../api/exam/exam'
+import scoreService from '../../api/exam/score'
+import userService from '../../api/user/user'
+import questionService from '../../api/question/question'
 
 const router = useRouter()
 
@@ -727,16 +724,16 @@ const handlePrimarySelect = (key) => {
 
   const routeMap = {
     home: '/home',
-    examInfo: '/home/exam/info',
-    scoreManagement: '/home/exam/score',
-    examAnalysis: '/home/exam/analysis',
+    examInfo: '/home/examination/info',
+    scoreManagement: '/home/examination/score',
+    examAnalysis: '/home/examination/analysis',
     questionCategory: '/home/question/category',
     questionBank: '/home/question/bank',
     paperBank: '/home/question/paper',
     user: '/home/user/student',
     system: '/home/system/role',
-    current: '/home/examination/current',
-    history: '/home/examination/history'
+    current: '/home/exam/current',
+    history: '/home/exam/history'
   }
 
   if (routeMap[key]) {
@@ -897,7 +894,7 @@ onMounted(() => {
   }).finally(() => {
     loading.value = false
   })
-
+})
 // 组件卸载时清理事件监听
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)

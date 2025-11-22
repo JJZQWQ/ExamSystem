@@ -1,34 +1,57 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginPage from '../components/LoginPage.vue'
-import HomePage from '../components/HomePage.vue'
-import ExamInfoManagement from '../components/ExamInfoManagement.vue'
-import CreateExam from '../components/CreateExam.vue'
-import ExamScoreManagement from '../components/ExamScoreManagement.vue'
-import ExamPaperReview from '../components/ExamPaperReview.vue'
-import ExamAnalysis from '../components/ExamAnalysis.vue'
-import QuestionCategoryManagement from '../components/question/QuestionCategoryManagement.vue'
-import QuestionBank from '../components/QuestionBank.vue'
-import PaperBank from '../components/question/PaperBank.vue'
+import LoginPage from '../components/base/LoginPage.vue'
+import HomePage from '../components/base/HomePage.vue'  // 导入HomePage组件
+// import Dashboard from '../components/home/Dashboard.vue'  // 注释掉Dashboard导入
+import CreatePaper from '../components/home/CreatePaper.vue'
+// import CreateExamAddPaper from '../components/home/CreateExamAddPaper.vue'
+import AddPersonnel from '../components/home/AddPersonnel.vue'
+import CreateExam from '../components/exam/CreateExam.vue'
+import ExamInfoManagement from '../components/exam-management/ExamInfoManagement.vue'
+import ExamScoreManagement from '../components/exam-management/ExamScoreManagement.vue'
+import ExamPaperReview from '../components/exam/ExamPaperReview.vue'
+import ExamAnalysis from '../components/exam-management/ExamAnalysis.vue'
+import QuestionCategoryManagement from '../components/question-management/QuestionCategoryManagement.vue'
+import QuestionBank from '../components/question-management/QuestionBank.vue'
+import PaperBank from '../components/question-management/PaperBank.vue'
 import PaperPreview from '../components/question/PaperPreview.vue'
-import CreatePaperPage from '../components/question/CreatePaperPage.vue'
-import StudentManagement from '../components/user/StudentManagement.vue'
-import RoleManagement from '../components/system/RoleManagement.vue'
-import CurrentExam from '../components/CurrentExam.vue'
-import HistoryExam from '../components/HistoryExam.vue'
+import CreatePaperPage from '../components/question-management/CreatePaperPage.vue'
+import StudentManagement from '../components/user-management/StudentManagement.vue'
+import RoleManagement from '../components/system-management/RoleManagement.vue'
+import CurrentExam from '../components/exam/CurrentExam.vue'
+import HistoryExam from '../components/exam/HistoryExam.vue'
 
 const routes = [
   {
     path: '/',
+    redirect: '/home'  // 根路径重定向到/home
+  },
+  {
+    path: '/login',  // 添加专门的登录路由
     name: 'Login',
     component: LoginPage
   },
   {
     path: '/home',
     name: 'Home',
-    component: HomePage,
+    component: HomePage,  // 使用HomePage替代Dashboard
     children: [
       {
-        path: 'exam',
+        path: '',
+        name: 'HomePage',
+        component: HomePage  // 默认子路由也使用HomePage
+      },
+      {
+        path: 'create-paper',
+        name: 'CreatePaper',
+        component: CreatePaper
+      },
+      {
+        path: 'add-personnel',
+        name: 'AddPersonnel',
+        component: AddPersonnel
+      },
+      {
+        path: 'examination',
         children: [
           {
             path: '',
@@ -114,7 +137,7 @@ const routes = [
         ]
       },
       {
-        path: 'examination',
+        path: 'exam',
         children: [
           {
             path: '',
@@ -151,6 +174,7 @@ const routes = [
   }
 ]
 
+// 确保所有必要地导入路径正确
 const router = createRouter({
   history: createWebHistory(),
   routes
