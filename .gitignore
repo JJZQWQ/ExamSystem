@@ -10,6 +10,12 @@ target/
 # 多模块项目特定排除
 exam-admin/target/
 exam-admin/*.log
+exam-admin/src/test/
+exam-common/src/test/
+exam-pojo/src/test/
+exam-ui/dist/
+exam-ui/node_modules/
+ui/dist/
 
 # 本地环境配置
 .env

@@ -15,6 +15,8 @@
 
     <modules>
         <module>exam-admin</module>
+        <module>exam-pojo</module>
+        <module>exam-common</module>
     </modules>
 
     <properties>
