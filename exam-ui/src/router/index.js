@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginPage from '../components/base/LoginPage.vue'
+import { useAuthStore } from '../stores/auth'
+import { ElMessage } from 'element-plus'
+import AuthContainer from '../components/base/AuthContainer.vue'
 import HomePage from '../components/base/HomePage.vue'  // 导入HomePage组件
 // import Dashboard from '../components/home/Dashboard.vue'  // 注释掉Dashboard导入
 import CreatePaper from '../components/home/CreatePaper.vue'
@@ -26,9 +28,9 @@ const routes = [
     redirect: '/home'  // 根路径重定向到/home
   },
   {
-    path: '/login',  // 添加专门的登录路由
-    name: 'Login',
-    component: LoginPage
+    path: '/login',  // 登录/注册路由
+    name: 'Auth',
+    component: AuthContainer
   },
   {
     path: '/home',
@@ -38,7 +40,7 @@ const routes = [
       {
         path: '',
         name: 'HomePage',
-        component: HomePage  // 默认子路由也使用HomePage
+        component: () => import('../components/home/Dashboard.vue')  // 默认子路由使用Dashboard
       },
       {
         path: 'create-paper',
@@ -178,6 +180,59 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 导航守卫 - 检查认证状态
+router.beforeEach((to, from, next) => {
+  // 获取认证store实例
+  const authStore = useAuthStore()
+  
+  // 不需要认证的路径
+  const publicPaths = ['/login']
+  const isPublicPath = publicPaths.includes(to.path)
+  
+  // 首先尝试从本地存储恢复认证状态
+  authStore.checkAuth()
+  
+  // 如果是公共路径，直接放行
+  if (isPublicPath) {
+    // 如果已登录访问登录页，重定向到首页
+    if (authStore.isAuthenticated) {
+      next({ path: '/home' })
+    } else {
+      next()
+    }
+    return
+  }
+  
+  // 对于需要认证的路径，检查登录状态
+  if (!authStore.isAuthenticated) {
+    ElMessage({
+      message: '请先登录',
+      type: 'warning',
+      duration: 2000
+    })
+    // 保存当前路径，登录成功后可以跳转回原页面
+    sessionStorage.setItem('redirectPath', to.fullPath)
+    next({ path: '/login' })
+    return
+  }
+  
+  // 已认证用户，正常放行
+  next()
+})
+
+// 监听认证过期事件
+window.addEventListener('auth:session-expired', () => {
+  const authStore = useAuthStore()
+  // 清除认证状态
+  authStore.logout()
+  ElMessage({
+    message: '登录已过期，请重新登录',
+    type: 'warning',
+    duration: 2000
+  })
+  router.push('/login')
 })
 
 export default router

@@ -44,10 +44,11 @@ public class ScoreController {
     @GetMapping("/exam/{examId}/student/{studentId}")
     public ScoreDTO getScoreDetail(@PathVariable Long examId, @PathVariable Long studentId) {
         // TODO: 实现获取成绩详情逻辑
-        ScoreDTO scoreDTO = new ScoreDTO();
-        scoreDTO.setExamId(examId);
-        scoreDTO.setUserId(studentId);
-        return scoreDTO;
+//        ScoreDTO scoreDTO = new ScoreDTO();
+//        scoreDTO.setExamId(examId);
+//        scoreDTO.setUserId(studentId);
+//        return scoreDTO;
+        return null;
     }
 
     /**

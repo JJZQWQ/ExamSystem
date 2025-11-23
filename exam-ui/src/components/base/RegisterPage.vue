@@ -7,31 +7,41 @@
       <div class="bg-circle circle-3"></div>
     </div>
 
-    <!-- 登录卡片 -->
+    <!-- 注册卡片 -->
     <div class="login-card animate__animated animate__fadeInDown">
       <!-- 头部 -->
       <div class="login-header">
         <div class="logo-section">
           <el-icon size="48" color="#409EFF" class="logo-icon"><Document /></el-icon>
-          <h1 class="title">考试管理系统</h1>
-          <p class="subtitle">专业、高效、安全的在线考试平台</p>
+          <h1 class="title">创建新账号</h1>
+          <p class="subtitle">加入考试管理系统，体验专业的在线考试服务</p>
         </div>
       </div>
 
-      <!-- 登录表单 -->
+      <!-- 注册表单 -->
       <el-form 
-        ref="loginFormRef" 
-        :model="loginForm" 
-        :rules="loginRules"
+        ref="registerFormRef" 
+        :model="registerForm" 
+        :rules="registerRules"
         class="login-form"
         size="large"
-        @keyup.enter="handleLogin"
+        @keyup.enter="handleRegister"
       >
         <el-form-item prop="username">
           <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
+            v-model="registerForm.username"
+            placeholder="请设置用户名"
             :prefix-icon="User"
+            clearable
+            class="form-input"
+          />
+        </el-form-item>
+
+        <el-form-item prop="name">
+          <el-input
+            v-model="registerForm.name"
+            placeholder="请输入姓名"
+            :prefix-icon="ChatDotRound"
             clearable
             class="form-input"
           />
@@ -39,9 +49,9 @@
 
         <el-form-item prop="password">
           <el-input
-            v-model="loginForm.password"
+            v-model="registerForm.password"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="请输入密码"
+            placeholder="请设置密码（6-20位字符）"
             :prefix-icon="Lock"
             :suffix-icon="showPassword ? View : Hide"
             @click-suffix="togglePasswordVisibility"
@@ -49,30 +59,48 @@
           />
         </el-form-item>
 
-        <!-- 忘记密码 -->
-        <div class="form-options">
-          <el-button type="primary" link @click="forgotPassword">忘记密码？</el-button>
-        </div>
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="registerForm.confirmPassword"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="请再次输入密码"
+            :prefix-icon="Lock"
+            :suffix-icon="showPassword ? View : Hide"
+            @click-suffix="togglePasswordVisibility"
+            class="form-input"
+          />
+        </el-form-item>
 
-        <!-- 登录按钮 -->
+        <el-form-item prop="role">
+          <el-select
+            v-model="registerForm.role"
+            placeholder="请选择用户角色"
+            class="form-input"
+          >
+            <el-option label="管理员" value="admin" />
+            <el-option label="学生" value="student" />
+            <el-option label="教师" value="teacher" />
+          </el-select>
+        </el-form-item>
+
+        <!-- 注册按钮 -->
         <el-form-item>
           <el-button
             type="primary"
             size="large"
             :loading="isLoading"
-            @click="handleLogin"
+            @click="handleRegister"
             class="login-button"
           >
-            {{ isLoading ? '登录中...' : '登录' }}
+            {{ isLoading ? '注册中...' : '注册' }}
           </el-button>
         </el-form-item>
 
-        <!-- 切换到注册 -->
-        <div class="switch-register">
-          <span>还没有账号？</span>
-          <el-button type="primary" link @click="switchToRegister" class="switch-button">立即注册</el-button>
+        <!-- 切换到登录 -->
+        <div class="switch-login">
+          <span>已有账号？</span>
+          <el-button type="primary" link @click="switchToLogin" class="switch-button">立即登录</el-button>
         </div>
-
       </el-form>
 
       <!-- 底部信息 -->
@@ -89,7 +117,7 @@
     <!-- 右侧信息展示 -->
     <div class="info-section animate__animated animate__fadeInRight">
       <div class="info-content">
-        <h2>欢迎使用考试管理系统</h2>
+        <h2>为什么选择我们</h2>
         <div class="feature-list">
           <div class="feature-item">
             <el-icon size="24" color="#409EFF"><Document /></el-icon>
@@ -126,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -139,88 +167,128 @@ import {
   DataAnalysis,
   Monitor
 } from '@element-plus/icons-vue'
-import { useAuthStore } from '../../stores/auth'
-
-const emit = defineEmits(['switch-to-register'])
+import authService from '../../api/auth/auth.js'
 
 const router = useRouter()
-const loginFormRef = ref()
+const registerFormRef = ref()
+
+// 定义暴露的事件
+const emit = defineEmits(['switch-to-login'])
 
 // 表单数据
-const loginForm = reactive({
+const registerForm = reactive({
   username: '',
-  password: ''
+  name: '',
+  password: '',
+  confirmPassword: '',
+  role: 'student' // 默认角色为学生
 })
 
 // 表单验证规则
-const loginRules = {
+const registerRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: '请设置用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线', trigger: 'blur' }
+  ],
+  name: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { min: 2, max: 10, message: '姓名长度在 2 到 10 个字符', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: '请设置密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_!@#$%^&*]+$/, message: '密码只能包含字母、数字和特殊字符', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== registerForm.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  role: [
+    { required: true, message: '请选择用户角色', trigger: 'change' }
   ]
 }
 
 // 控制状态
 const showPassword = ref(false)
-const authStore = useAuthStore()
-// 从store获取加载状态
-const isLoading = computed(() => authStore.isLoading)
+const isLoading = ref(false)
 
 // 切换密码可见性
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-// 忘记密码
-const forgotPassword = () => {
-  ElMessage.info('请联系管理员重置密码')
+// 切换到登录页面
+const switchToLogin = () => {
+  emit('switch-to-login')
 }
 
-// 切换到注册页面
-const switchToRegister = () => {
-  emit('switch-to-register')
-}
-
-// 处理登录
-const handleLogin = async () => {
-  if (!loginFormRef.value) return
+// 处理注册
+const handleRegister = async () => {
+  if (!registerFormRef.value) return
+  
+  isLoading.value = true
   
   try {
     // 表单验证
-    await loginFormRef.value.validate()
+    await registerFormRef.value.validate()
     
-    // 使用store的login方法
-    await authStore.login({
-      username: loginForm.username,
-      password: loginForm.password
+    // 调用注册API
+    const response = await authService.register({
+      username: registerForm.username,
+      name: registerForm.name,
+      password: registerForm.password,
+      role: registerForm.role
     })
     
-    ElMessage.success('登录成功！')
+    isLoading.value = false
     
-    // 跳转到首页或之前保存的重定向路径
-    const redirectPath = sessionStorage.getItem('redirectPath') || '/home'
-    sessionStorage.removeItem('redirectPath')
-    router.push(redirectPath)
+    // 优化成功响应处理，显示后端返回的消息（如果有）
+    let successMessage = response.data && response.data.message ? response.data.message : '注册成功！请登录'
+    ElMessage.success(successMessage)
+    
+    // 重置表单数据
+    registerFormRef.value.resetFields()
+    
+    // 注册成功后切换到登录页面
+    setTimeout(() => {
+      switchToLogin()
+    }, 1500)
   } catch (error) {
+    isLoading.value = false
     // 如果是表单验证错误，不显示额外消息
     if (error.name !== 'Error') {
       console.log('表单验证失败:', error)
     } else {
-      // 显示store中的错误信息或默认错误信息
-      ElMessage.error(authStore.error || '登录失败，请检查用户名和密码')
-      console.error('登录错误:', error)
+      // 优化错误处理，显示后端返回的具体错误信息
+      let errorMessage = '注册失败，请稍后重试'
+      if (error.response && error.response.data) {
+        if (error.response.data.message) {
+          errorMessage = error.response.data.message
+        } else if (error.response.data.msg) {
+          errorMessage = error.response.data.msg
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error
+        }
+      }
+      ElMessage.error(errorMessage)
+      console.error('注册错误:', error)
     }
   }
 }
-
-
 </script>
 
 <style scoped>
+/* 复用LoginPage的样式 */
 .login-container {
   position: relative;
   min-height: 100vh;
@@ -367,30 +435,7 @@ const handleLogin = async () => {
   border-color: #409EFF;
 }
 
-/* 表单选项 */
-.form-options {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-/* 切换到注册 */
-.switch-register {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 24px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.switch-button {
-  padding: 0;
-  margin-left: 4px;
-}
-
-/* 登录按钮 */
+/* 注册按钮 */
 .login-button {
   width: 100%;
   height: 48px;
@@ -411,51 +456,19 @@ const handleLogin = async () => {
   transform: translateY(0);
 }
 
-/* 其他登录方式 */
-.other-login {
-  margin-top: 30px;
-}
-
-.divider-text {
-  color: #909399;
-  font-size: 12px;
-  padding: 0 12px;
-}
-
-.social-login {
+/* 切换到登录 */
+.switch-login {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-top: 20px;
+  align-items: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #606266;
 }
 
-.social-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid #e4e7ed;
-  background: #fff;
-  transition: all 0.3s ease;
-}
-
-.social-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-}
-
-.social-btn.wechat:hover {
-  border-color: #67C23A;
-  color: #67C23A;
-}
-
-.social-btn.qq:hover {
-  border-color: #409EFF;
-  color: #409EFF;
-}
-
-.social-btn.email:hover {
-  border-color: #E6A23C;
-  color: #E6A23C;
+.switch-button {
+  padding: 0;
+  margin-left: 4px;
 }
 
 /* 底部信息 */
@@ -566,15 +579,6 @@ const handleLogin = async () => {
   .info-section {
     display: none;
   }
-  
-  .social-login {
-    gap: 12px;
-  }
-  
-  .social-btn {
-    width: 40px;
-    height: 40px;
-  }
 }
 
 /* 深色模式适配 */
@@ -603,6 +607,10 @@ const handleLogin = async () => {
   
   .form-input :deep(.el-input__inner::placeholder) {
     color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .switch-login {
+    color: #ccc;
   }
 }
 </style>

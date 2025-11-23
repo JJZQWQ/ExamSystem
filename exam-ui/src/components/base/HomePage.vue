@@ -412,6 +412,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useAuthStore } from '../../stores/auth'
 import {
   House,
   Management,
@@ -444,14 +445,21 @@ import questionService from '../../api/question/question'
 
 const router = useRouter()
 
+// 初始化认证功能
+const authStore = useAuthStore()
+const { logout } = authStore
+// 使用计算属性访问用户信息和认证状态
+const userInfo = computed(() => authStore.userInfo)
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+
 // 响应式数据
 const isCollapse = ref(false)
 const activePrimary = ref('home')
 const notificationDrawerVisible = ref(false)
 const activeNotificationTab = ref('all')
 const examSearchText = ref('')
-const userName = ref('管理员')
-const userAvatar = ref('')
+const userName = computed(() => userInfo.value?.name || '管理员')
+const userAvatar = computed(() => userInfo.value?.avatar || '')
 const isDarkMode = ref(false)
 const notificationCount = ref(0)
 
@@ -742,26 +750,46 @@ const handlePrimarySelect = (key) => {
 }
 
 // 处理用户下拉菜单命令
-const handleUserCommand = (command) => {
-  switch (command) {
-    case 'profile':
-      ElMessage.info('个人中心功能开发中...')
-      break
-    case 'settings':
-      ElMessage.info('系统设置功能开发中...')
-      break
-    case 'logout':
-      ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        router.push('/')
-        ElMessage.success('已退出登录')
-      }).catch(() => {})
-      break
+  const handleUserCommand = (command) => {
+    switch (command) {
+      case 'profile':
+        ElMessage.info('个人中心功能开发中...')
+        break
+      case 'settings':
+        ElMessage.info('系统设置功能开发中...')
+        break
+      case 'logout':
+        ElMessageBox.confirm('确定要退出登录吗？', '退出登录确认', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+          center: true,
+          showClose: true,
+          beforeClose: async (action, instance, done) => {
+            if (action === 'confirm') {
+              // 禁用按钮，防止重复点击
+              instance.confirmButtonLoading = true
+              instance.confirmButtonText = '退出中...'
+              
+              try {
+                // 调用退出登录方法
+                await logout()
+                done() // 关闭对话框
+              } catch (error) {
+                console.error('退出登录失败:', error)
+                // 恢复按钮状态
+                instance.confirmButtonLoading = false
+                instance.confirmButtonText = '确定'
+                done() // 仍然关闭对话框
+              }
+            } else {
+              done()
+            }
+          }
+        }).catch(() => {})
+        break
+    }
   }
-}
 
 // 获取状态类型
 const getStatusType = (status) => {

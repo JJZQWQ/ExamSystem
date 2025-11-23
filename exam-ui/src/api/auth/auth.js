@@ -16,6 +16,19 @@ const authService = {
   },
 
   /**
+   * 用户注册
+   * @param {Object} userData - 用户注册数据
+   * @param {string} userData.username - 用户名
+   * @param {string} userData.name - 姓名
+   * @param {string} userData.password - 密码
+   * @param {string} userData.role - 用户角色
+   * @returns {Promise} 注册结果
+   */
+  register: (userData) => {
+    return api.post('/auth/register', userData)
+  },
+
+  /**
    * 用户登出
    * @returns {Promise} 登出结果
    */

@@ -14,6 +14,7 @@ import java.io.InputStream;
 
 @Slf4j
 public class DocumentExtractorUtil {
+    // Updated to fix dependency resolution issues
 
     /**
      * 从MultipartFile中提取文本内容

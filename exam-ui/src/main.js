@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import './style.css'
 import 'animate.css'
 import App from './App.vue'
@@ -10,6 +11,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { startMockService } from './api/mock'
 
 const app = createApp(App)
+const pinia = createPinia()
 
 // 在开发环境中启动Mock服务
 if (import.meta.env.DEV) {
@@ -22,6 +24,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus, {
   size: 'default',

@@ -41,6 +41,7 @@
         <jjwt>0.11.5</jjwt>
         <jaxb-api>4.0.1</jaxb-api>
         <poi>5.2.5</poi>
+        <pdfbox>2.0.27</pdfbox>
         <spring-ai.version>1.0.1</spring-ai.version>
 
         <!-- 数据库版本 -->
@@ -189,6 +190,18 @@
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-ooxml</artifactId>
                 <version>${poi}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-scratchpad</artifactId>
+                <version>${poi}</version>
+            </dependency>
+            
+            <!-- Apache PDFBox -->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox}</version>
             </dependency>
             
             <!-- JWT -->
