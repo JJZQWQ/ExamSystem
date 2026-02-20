@@ -1,38 +1,76 @@
+# Maven构建目录
 target/
-!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
+# Maven包装器
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# 多模块项目特定排除
+exam-admin/target/
+exam-admin/*.log
+exam-admin/src/test/
+exam-common/src/test/
+exam-pojo/src/test/
+exam-ui/dist/
+exam-ui/node_modules/
+ui/dist/
+
+# 本地环境配置
+.env
+.env.local
+.env.*.local
+
+# 编辑器和IDE配置
 *.iml
 *.ipr
-
-### Eclipse ###
-.apt_generated
+*.iws
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
 .classpath
-.factorypath
 .project
-.settings
+.settings/
+.factorypath
 .springBeans
 .sts4-cache
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
+# 操作系统文件
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 构建工具
+.npm
+.nvm
+.node-version
+.npmrc
+.yarn-integrity
+
+### 补充构建工具配置 ###
+/build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
-
-### Mac OS ###
-.DS_Store
+# IDE特定配置补充
+/.nb-gradle/
+/nbbuild/
+/dist/
+/nbdist/
+/nbproject/private/
